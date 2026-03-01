@@ -18,7 +18,6 @@ npm run build        # Production build
 npm run lint         # ESLint + Prettier
 npm run typecheck    # TypeScript strict check
 npm run test         # Unit tests
-npm run test:e2e     # E2E tests
 ```
 
 ## Pull Requests
@@ -40,7 +39,7 @@ test(scope): description     # Tests
 chore(scope): description    # Maintenance
 ```
 
-Scopes: `capture`, `popup`, `content`, `background`, `storage`, `mcp`, `clipboard`, `locators`
+Scopes: `capture`, `popup`, `content`, `background`, `clipboard`, `storage`
 
 ### PR Checklist
 

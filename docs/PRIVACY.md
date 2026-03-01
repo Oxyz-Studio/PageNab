@@ -4,7 +4,7 @@
 
 ## Overview
 
-PageNab is a Chrome extension that captures web page context (screenshots, console logs, network requests, DOM snapshots) and saves them locally on your computer. PageNab is designed with privacy as a core principle.
+PageNab is a Chrome extension that captures web page context (screenshots, console logs, network requests, DOM snapshots, cookies, storage, user interactions, performance metrics) and copies it to your clipboard for use with AI coding assistants. PageNab is designed with privacy as a core principle.
 
 ## Data Collection
 
@@ -18,16 +18,16 @@ PageNab is a Chrome extension that captures web page context (screenshots, conso
 
 ## Data Storage
 
-All captured data is stored **exclusively on your local machine** in the `~/.pagenab/` directory:
+All captured data stays **exclusively on your local machine**:
 
-- Screenshots (PNG files)
-- Console logs (JSON files)
-- Network request logs (JSON files)
-- DOM snapshots (HTML files)
-- Playwright locators (JSON files)
-- Page metadata (JSON files)
+- **Clipboard**: Page context (text + screenshot image) is copied to your clipboard for immediate pasting
+- **Downloads folder**: Screenshots are saved as PNG files for persistence
+- **Extension local storage**: Capture history (thumbnails + text data) is stored locally within the extension
 
-You have full control over this data. You can view, modify, or delete it at any time.
+You have full control over this data:
+- Clear your clipboard at any time
+- Delete downloaded screenshots from your Downloads folder
+- Delete captures from the extension's history via the popup
 
 ## Data Sharing
 
@@ -43,32 +43,51 @@ You have full control over this data. You can view, modify, or delete it at any 
 
 PageNab automatically sanitizes sensitive information from captures:
 
-- **Network requests**: Authorization headers, cookies, API keys, and tokens are stripped before saving
+- **Network requests**: Authorization headers, cookies, API keys, and tokens are stripped from captured network data
 - **DOM snapshots**: Password field values are replaced with `***`
-- **No cookies captured**: Unlike some browser tools, PageNab does not capture or store browser cookies
+- **Cookies**: Values are truncated; cookies with sensitive names (containing "token", "session", "auth", "key", "secret", "password") have their values fully masked with `***`
+- **Storage**: Keys containing sensitive terms have their values masked; all values are truncated to 200 characters
+- **User interactions**: Input field values are ALWAYS masked with `***`; no individual keystrokes are captured
+
+## Captured Data Types
+
+PageNab can capture the following data types depending on the selected preset (Light, Full, or Custom):
+
+| Data Type | Description | Sanitized |
+|-----------|-------------|-----------|
+| Screenshot | Visual capture of the page | No PII captured |
+| Metadata | URL, title, viewport, user agent | Public page info only |
+| Console logs | Browser console messages | No sanitization needed |
+| Network requests | Failed/slow HTTP requests | Headers sanitized |
+| DOM snapshot | Cleaned HTML of the page | Scripts removed, passwords masked |
+| Cookies | Non-httpOnly cookies (via document.cookie) | Values truncated/masked |
+| Storage | localStorage and sessionStorage contents | Sensitive keys masked |
+| User interactions | Last 50 clicks, scrolls, inputs | All input values masked |
+| Performance metrics | Load times, Core Web Vitals, memory | Technical metrics only |
+
+**Important**: Cookies are read via `document.cookie` in the content script (non-httpOnly cookies only). PageNab does NOT use the `cookies` Chrome permission and cannot access httpOnly cookies.
 
 ## Permissions
-
-PageNab requests the following Chrome permissions, each with a specific purpose:
 
 | Permission | Why |
 |------------|-----|
 | `activeTab` | To capture the content of the page you're currently viewing, only when you click the extension |
-| `clipboardWrite` | To copy the formatted prompt to your clipboard |
-| `storage` | To save your extension preferences (capture settings) |
-| `nativeMessaging` | To write capture files to your local disk |
+| `clipboardWrite` | To copy page context (text + screenshot image) to your clipboard |
+| `storage` | To save your preferences and capture history locally |
+| `downloads` | To save screenshots to your Downloads folder for persistence |
 | `notifications` | To confirm when a capture is complete |
 
 PageNab does **not** request:
 - `<all_urls>` (no access to all websites)
 - `tabs` (no access to your tab list)
 - `history` (no access to your browsing history)
-- `cookies` (no access to your cookies)
+- `cookies` (no access to httpOnly cookies via Chrome API)
 - `webRequest` (no network interception)
+- `nativeMessaging` (no external processes)
 
 ## Open Source
 
-PageNab is fully open source under the MIT license. You can review the complete source code at:
+PageNab is fully open source under the MIT license:
 https://github.com/Oxyz-Studio/PageNab
 
 ## Children's Privacy
@@ -77,10 +96,9 @@ PageNab does not knowingly collect any information from children under 13.
 
 ## Changes to This Policy
 
-If we make changes to this privacy policy, we will update the "Last updated" date at the top of this page and publish the updated policy in the GitHub repository.
+Changes will be reflected in the "Last updated" date and published in the GitHub repository.
 
 ## Contact
 
-For questions about this privacy policy:
 - GitHub Issues: https://github.com/Oxyz-Studio/PageNab/issues
 - Email: contact@oxyz.fr

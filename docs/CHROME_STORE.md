@@ -22,54 +22,49 @@
 ### Politique de confidentialite
 
 Obligatoire. Page web accessible publiquement.
-
-Option simple : page GitHub Pages dans le repo :
-- `docs/privacy-policy.html` → publie via GitHub Pages
-- URL : `https://oxyz-studio.github.io/PageNab/privacy-policy.html`
-
-Contenu minimum :
-- Quelles donnees sont collectees : aucune (tout est local)
-- Quelles donnees sont partagees : aucune
-- Comment les donnees sont stockees : fichiers locaux uniquement
-- Contact : email support
+URL : `https://oxyz-studio.github.io/PageNab/privacy-policy.html`
 
 ## Build et packaging
 
 ```bash
-# Build production
 npm run build
-
-# Generer le .zip pour le Store
 npm run zip
-# Produit : pagenab-v1.0.0.zip dans le dossier racine
 ```
 
 ## Soumission
 
-### Etape 1 : Upload
-
-1. Dashboard > New Item
-2. Upload le fichier `.zip`
-3. Le dashboard parse le manifest et affiche les infos
-
-### Etape 2 : Fiche descriptive
+### Fiche descriptive
 
 **Titre** : PageNab — Capture Web Context for AI
 
 **Resume** (132 chars max) :
-> Capture any web page (screenshot, console, DOM, network) in one click. Paste the context into any AI coding assistant.
+> Capture any web page (screenshot, console, DOM, network, cookies, performance) in one click. Paste the context into any AI assistant.
 
 **Description** :
 ```
-PageNab captures the full context of any web page and formats it as a ready-to-paste prompt for AI coding assistants.
+PageNab captures the full context of any web page and puts it in your clipboard — screenshot + text data — ready to paste into any AI coding assistant.
 
 One click captures:
-- Full page screenshot
+- Full page or area screenshot (image attaches directly when pasting)
 - Console errors and warnings with stack traces
-- Failed network requests with response bodies
+- Failed and slow network requests
 - Clean DOM snapshot
-- Auto-generated Playwright locators
+- Cookies and storage data (sanitized)
+- User interactions (last clicks, scrolls)
+- Performance metrics (Core Web Vitals, load times)
 - Page metadata (URL, viewport, user agent)
+
+Three capture presets:
+- Light: errors + network summary (~500 tokens of text + screenshot image)
+- Full: everything including DOM snapshot, cookies, storage, performance
+- Custom: choose exactly what data to capture
+
+Features:
+- Screenshot pastes as an image (like a native screenshot)
+- Capture history with re-copy, details, and delete
+- Customizable keyboard shortcut for instant capture
+- Area selection mode to capture specific page regions
+- Sensitive data automatically sanitized (passwords, tokens, auth headers)
 
 Works with any AI tool: Claude Code, Cursor, Windsurf, GitHub Copilot, ChatGPT, or any LLM.
 
@@ -82,43 +77,30 @@ Open source: https://github.com/Oxyz-Studio/PageNab
 
 **Langue** : English (primary), French
 
-### Etape 3 : Permissions
-
-Justifier chaque permission demandee :
+### Permissions
 
 | Permission | Justification |
 |------------|--------------|
 | `activeTab` | Access the current tab to capture DOM, console logs, and screenshot when user clicks the extension |
-| `clipboardWrite` | Copy the formatted capture prompt to clipboard |
-| `storage` | Store user preferences (capture settings, rotation policy) |
-| `nativeMessaging` | Write capture files to local disk via Native Messaging Host |
+| `clipboardWrite` | Copy page context (text + screenshot image) to clipboard |
+| `storage` | Store user preferences and capture history locally |
+| `downloads` | Save page screenshots to user's Downloads folder for persistence |
 | `notifications` | Show confirmation after successful capture |
 
-### Etape 4 : Privacy practices
+### Privacy practices
 
 - **Single purpose** : "Capture web page context for AI coding assistants"
-- **Data usage** : "The extension does not collect, transmit, or store any user data externally. All captured data is saved locally on the user's machine."
-- **Remote code** : "No" (tout est bundle)
-- **Permissions justification** : voir tableau ci-dessus
+- **Data usage** : "The extension does not collect, transmit, or store any user data externally. Captured data is copied to clipboard, saved in Downloads, and stored in local extension storage for capture history. Sensitive data (passwords, tokens, auth headers, cookie values) is automatically sanitized."
+- **Remote code** : "No"
 
-### Etape 5 : Review
+### Review
 
-- Soumettre pour review
-- Delai : **1 a 7 jours** (generalement 1-2 jours pour les nouvelles extensions simples)
-- Si rejet : corriger les points mentionnes et resoumettre
-
-## Mises a jour
-
-Meme processus que la soumission initiale :
-1. Incrementer la version dans `package.json` et `manifest.json`
-2. `npm run build && npm run zip`
-3. Upload le nouveau .zip dans le Dashboard
-4. Review (generalement plus rapide pour les mises a jour)
+- Delai : **1 a 7 jours** (generalement 1-2 jours)
 
 ## Checklist pre-publication
 
 - [ ] Build production sans erreurs
-- [ ] Tests passes (unit + E2E)
+- [ ] Tests passes (unit)
 - [ ] Icones generees (16, 32, 48, 128)
 - [ ] Screenshots du store preparees (1280x800)
 - [ ] Politique de confidentialite publiee

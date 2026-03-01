@@ -2,30 +2,46 @@
 
 ## Vue d'ensemble
 
-Chaque capture PageNab produit un dossier contenant 5 a 7 fichiers. Le format est concu pour etre lisible par un humain ET par une AI.
+Chaque capture PageNab produit un ensemble de donnees structurees. Le contenu depend du preset choisi (Light, Full, Custom). Le screenshot et les metadata sont toujours captures.
 
-## Structure du dossier
+## Presets
 
-```
-{YYYY-MM-DD}_{HH-mm-ss}_{domain}/
-├── screenshot.png          (obligatoire)
-├── element.png             (optionnel — si element selectionne)
-├── console.json            (obligatoire)
-├── network.json            (obligatoire)
-├── dom.html                (obligatoire)
-├── locators.json           (obligatoire)
-└── metadata.json           (obligatoire)
-```
+| Donnee | Light | Full | Custom |
+|--------|-------|------|--------|
+| Screenshot | ✓ (toujours) | ✓ (toujours) | ✓ (toujours) |
+| Metadata | ✓ (toujours) | ✓ (toujours) | ✓ (toujours) |
+| Console | Errors + warnings | All levels | Configurable |
+| Network | Failed only | Failed + slow | Configurable |
+| DOM | Non | Oui | Configurable |
+| Cookies | Non | Oui (sanitises) | Configurable |
+| LocalStorage / SessionStorage | Non | Oui | Configurable |
+| User interactions | Non | Oui | Configurable |
+| Performance metrics | Non | Oui | Configurable |
 
-**Nommage du dossier** : `2026-03-01_14-23-45_app.example.com`
-- Date ISO 8601 avec tirets au lieu de deux-points (compatibilite systeme de fichiers)
-- Domaine du site capture (sans protocole, sans path)
+## Donnees toujours capturees
 
-## Fichiers detailles
+### screenshot (PNG)
 
-### metadata.json
+Screenshot pleine page via `chrome.tabs.captureVisibleTab()`.
 
-Toujours lu en premier par l'AI. Contient le contexte global.
+- Format : PNG
+- Resolution : viewport reel de l'utilisateur
+- Taille typique : 200KB - 1MB
+- Destination : clipboard (image/png) + Downloads (persistance)
+- Nommage Downloads : `pagenab-{domain}-{YYYY-MM-DD_HH-mm-ss}.png`
+- **Toujours capture**, quel que soit le preset
+
+### area screenshot (PNG, optionnel)
+
+Crop rectangulaire du screenshot full page, si mode area selectionne.
+
+- Taille typique : 10KB - 500KB
+- Destination : clipboard (image/png, prioritaire sur full page) + Downloads
+- Nommage : `pagenab-{domain}-{YYYY-MM-DD_HH-mm-ss}-area.png`
+
+### metadata
+
+Contexte global, toujours capture.
 
 ```json
 {
@@ -35,49 +51,30 @@ Toujours lu en premier par l'AI. Contient le contexte global.
   "title": "Dashboard - My App",
   "domain": "app.example.com",
   "path": "/dashboard",
-  "viewport": {
-    "width": 1920,
-    "height": 1080
-  },
-  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) ...",
+  "viewport": { "width": 1920, "height": 1080 },
+  "userAgent": "Mozilla/5.0 ...",
   "language": "fr-FR",
   "colorScheme": "light",
-  "hasSelectedElement": true,
-  "selectedElementSelector": "div.dashboard-cards",
+  "captureMode": "fullpage",
+  "areaRect": null,
+  "preset": "full",
+  "capturedData": ["console", "network", "dom", "cookies", "storage", "interactions", "performance"],
   "captureVersion": "1.0.0",
   "captureDuration": 1234
 }
 ```
 
-### screenshot.png
+Le champ `capturedData` liste les types de donnees effectivement captures (depend du preset).
 
-Screenshot pleine page via `chrome.tabs.captureVisibleTab()`.
+## Donnees conditionnelles
 
-- Format : PNG
-- Resolution : viewport reel de l'utilisateur
-- Taille typique : 200KB - 1MB
+### console
 
-### element.png
-
-Screenshot de l'element selectionne uniquement. Genere par :
-1. `element.getBoundingClientRect()` pour les coordonnees
-2. Crop du screenshot pleine page
-
-- Present uniquement si l'utilisateur a selectionne un element
-- Taille typique : 10KB - 200KB
-
-### console.json
-
-Logs console captures au moment du nab.
+Logs console. Light = errors + warnings uniquement. Full/Custom = tous les niveaux.
 
 ```json
 {
-  "summary": {
-    "errors": 3,
-    "warnings": 1,
-    "logs": 12,
-    "info": 2
-  },
+  "summary": { "errors": 3, "warnings": 1, "logs": 12, "info": 2 },
   "logs": [
     {
       "level": "error",
@@ -85,39 +82,25 @@ Logs console captures au moment du nab.
       "source": "https://app.example.com/static/js/main.abc123.js",
       "line": 47,
       "column": 12,
-      "stack": "TypeError: Cannot read property 'map' of undefined\n    at Dashboard (Dashboard.tsx:47:12)\n    at renderWithHooks (react-dom.production.min.js:83:1)",
+      "stack": "TypeError: ...\n    at Dashboard (Dashboard.tsx:47:12)",
       "timestamp": "2026-03-01T14:23:40.100Z"
-    },
-    {
-      "level": "warning",
-      "message": "Each child in a list should have a unique \"key\" prop.",
-      "source": "react-jsx-runtime.production.min.js",
-      "line": 1,
-      "column": 1,
-      "stack": null,
-      "timestamp": "2026-03-01T14:23:41.200Z"
     }
   ]
 }
 ```
 
-**Regles de capture** :
+**Regles** :
 - Maximum 100 entrees (les plus recentes en priorite)
 - Les erreurs sont toujours incluses meme si le cap est atteint
-- Les stack traces sont preservees integralement
 - Les messages dupliques sont dedupliques avec un compteur
 
-### network.json
+### network
 
-Requetes reseau echouees ou lentes.
+Requetes reseau problematiques. Light = failed only. Full/Custom = failed + slow.
 
 ```json
 {
-  "summary": {
-    "total": 45,
-    "failed": 2,
-    "slow": 1
-  },
+  "summary": { "total": 45, "failed": 2, "slow": 1 },
   "failed": [
     {
       "url": "https://api.example.com/users",
@@ -128,115 +111,170 @@ Requetes reseau echouees ou lentes.
       "duration": 234,
       "timestamp": "2026-03-01T14:23:42.000Z",
       "requestHeaders": {},
-      "responseHeaders": {
-        "content-type": "application/json"
-      },
+      "responseHeaders": { "content-type": "application/json" },
       "responseBody": "{\"error\":\"Internal server error\"}",
       "initiator": "Dashboard.tsx:23"
     }
   ],
-  "slow": [
-    {
-      "url": "https://api.example.com/analytics",
-      "method": "POST",
-      "status": 200,
-      "type": "fetch",
-      "duration": 5200,
-      "timestamp": "2026-03-01T14:23:38.000Z"
-    }
-  ]
+  "slow": [ /* ... */ ]
 }
 ```
 
 **Regles** :
-- "failed" = status >= 400 ou erreur reseau
-- "slow" = duration > 3000ms
-- Maximum 50 requetes echouees, 10 requetes lentes
-- Headers sensibles retires (Authorization, Cookie, etc.)
+- "failed" = status >= 400 ou erreur reseau. Max 50.
+- "slow" = duration > 3000ms. Max 10.
+- Headers sensibles retires (Authorization, Cookie, Set-Cookie, X-API-Key, X-Auth-Token, headers contenant "token"/"key"/"secret"/"password")
 - Body de reponse tronque a 10KB
 
-### dom.html
+### dom
 
 Snapshot HTML nettoye.
 
-```html
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <title>Dashboard - My App</title>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-</head>
-<body>
-  <!-- PageNab: Full page DOM snapshot -->
-  <!-- Si element selectionne, seul le sous-arbre est capture -->
-  <div class="dashboard-cards" data-testid="dashboard-cards">
-    <div class="card">
-      <h3>Revenue</h3>
-      <p class="value">$12,345</p>
-    </div>
-    <!-- ... -->
-  </div>
-</body>
-</html>
-```
-
 **Regles de nettoyage** :
-- Scripts inline (`<script>`) : retires
-- Scripts externes (`<script src="...">`) : retires
-- Styles inline (`style="..."`) : preserves (importants pour le layout)
-- Styles externes (`<link rel="stylesheet">`) : reference preservee, contenu non inclus
+- Scripts inline et externes : retires
+- Styles inline : preserves
 - Inputs `type="password"` : valeur remplacee par `***`
-- Attributs `data-*` : preserves (utiles pour les locators)
+- Attributs `data-*` : preserves
 - Commentaires HTML : retires
 - Taille max : 500KB (tronque les sous-arbres les plus profonds en premier)
 
-### locators.json
+### cookies
 
-Locators Playwright generes pour les elements interactifs.
+Cookies du domaine courant via `document.cookie` (non-httpOnly uniquement).
 
 ```json
 {
-  "version": "1.0.0",
-  "strategy": "prioritized",
-  "locators": [
+  "summary": { "total": 12 },
+  "cookies": [
     {
-      "element": "button",
-      "description": "Submit button in login form",
-      "locators": [
-        { "type": "getByRole", "value": "getByRole('button', { name: 'Submit' })", "confidence": 0.95 },
-        { "type": "getByTestId", "value": "getByTestId('login-submit')", "confidence": 0.90 },
-        { "type": "getByText", "value": "getByText('Submit')", "confidence": 0.70 },
-        { "type": "css", "value": "form.login button[type='submit']", "confidence": 0.50 }
-      ],
-      "boundingBox": { "x": 100, "y": 200, "width": 120, "height": 40 }
+      "name": "session_id",
+      "value": "abc1***",
+      "secure": true,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "theme",
+      "value": "dark",
+      "secure": false,
+      "sameSite": "Lax"
     }
   ]
 }
 ```
 
-**Strategie de generation** (par priorite) :
-1. `getByRole` — le plus resilient, base sur l'accessibilite
-2. `getByTestId` — si `data-testid` present
-3. `getByText` — pour les elements avec texte visible unique
-4. `getByLabel` — pour les inputs avec label associe
-5. CSS selector — fallback, moins resilient
+**Sanitization** :
+- Valeurs tronquees a 20 caracteres + "***"
+- Cookies dont le nom contient "token", "session", "auth", "key", "secret", "password" : valeur entierement masquee ("***")
+- Seuls les cookies du domaine courant sont captures
 
-**Score de confiance** :
-- 0.9+ : locator tres fiable (role + nom unique, testid)
-- 0.7-0.9 : fiable (texte unique, label)
-- 0.5-0.7 : acceptable (CSS specifique)
-- < 0.5 : fragile (CSS generique), marque comme warning
+### storage
+
+Contenu de localStorage et sessionStorage du domaine.
+
+```json
+{
+  "localStorage": {
+    "summary": { "keys": 5, "totalSize": "12.3 KB" },
+    "entries": [
+      { "key": "user_preferences", "value": "{\"theme\":\"dark\",\"lang\":\"fr\"...}", "size": "256 B" },
+      { "key": "auth_token", "value": "***", "size": "1.2 KB" }
+    ]
+  },
+  "sessionStorage": {
+    "summary": { "keys": 3, "totalSize": "4.1 KB" },
+    "entries": [
+      { "key": "form_draft", "value": "{\"title\":\"My post\",...}", "size": "512 B" }
+    ]
+  }
+}
+```
+
+**Sanitization** :
+- Valeurs tronquees a 200 caracteres
+- Cles contenant "token", "auth", "secret", "password", "key" : valeur masquee ("***")
+
+### interactions
+
+Derniers evenements utilisateur avant la capture. Buffer circulaire de 50 events max.
+
+```json
+{
+  "summary": { "total": 12, "clicks": 5, "scrolls": 4, "inputs": 3 },
+  "events": [
+    {
+      "type": "click",
+      "target": "button.submit-btn",
+      "text": "Submit",
+      "coordinates": { "x": 450, "y": 320 },
+      "timestamp": "2026-03-01T14:29:58.000Z"
+    },
+    {
+      "type": "scroll",
+      "direction": "down",
+      "distance": 450,
+      "timestamp": "2026-03-01T14:29:55.000Z"
+    },
+    {
+      "type": "input",
+      "target": "input#search",
+      "inputType": "text",
+      "value": "***",
+      "timestamp": "2026-03-01T14:29:50.000Z"
+    }
+  ]
+}
+```
+
+**Sanitization** :
+- Les valeurs des inputs sont TOUJOURS masquees ("***") — jamais de contenu utilisateur
+- Seuls le type d'element, classes CSS, et ID sont enregistres
+- Pas de capture de frappes clavier individuelles, uniquement l'evenement "input"
+
+**Architecture** :
+- Necessite un content script persistant (enregistre via `chrome.scripting.registerContentScripts`)
+- Le script est enregistre uniquement quand interactions est active (Full preset ou Custom avec interactions coche)
+- Desactive = pas de script persistant, zero impact sur les performances
+
+### performance
+
+Metriques de performance de la page.
+
+```json
+{
+  "loadTime": 2100,
+  "domContentLoaded": 1200,
+  "firstPaint": 800,
+  "firstContentfulPaint": 950,
+  "largestContentfulPaint": 1200,
+  "cumulativeLayoutShift": 0.05,
+  "firstInputDelay": 45,
+  "memoryUsed": 47185920,
+  "memoryLimit": 4294967296
+}
+```
+
+Sources :
+- `performance.getEntriesByType('navigation')` pour les timings de chargement
+- `PerformanceObserver` pour LCP, CLS, FID
+- `performance.memory` pour la memoire (Chrome uniquement)
 
 ## Taille estimee par capture
 
-| Fichier | Taille typique | Min | Max |
-|---------|---------------|-----|-----|
+| Donnee | Taille typique | Min | Max |
+|--------|---------------|-----|-----|
 | screenshot.png | 400KB | 100KB | 2MB |
-| element.png | 50KB | 5KB | 500KB |
-| console.json | 15KB | 1KB | 100KB |
-| network.json | 20KB | 1KB | 200KB |
-| dom.html | 100KB | 5KB | 500KB |
-| locators.json | 10KB | 1KB | 50KB |
-| metadata.json | 1KB | 0.5KB | 2KB |
-| **Total** | **~600KB** | **~115KB** | **~3.5MB** |
+| area.png | 50KB | 10KB | 500KB |
+| console | 15KB | 1KB | 100KB |
+| network | 20KB | 1KB | 200KB |
+| dom | 100KB | 5KB | 500KB |
+| cookies | 3KB | 0.5KB | 10KB |
+| storage | 10KB | 1KB | 50KB |
+| interactions | 8KB | 1KB | 20KB |
+| performance | 2KB | 1KB | 3KB |
+| metadata | 1KB | 0.5KB | 2KB |
+
+| Preset | Taille typique | Min | Max |
+|--------|---------------|-----|-----|
+| **Light** (full page) | ~440KB | ~105KB | ~2.3MB |
+| **Full** (full page) | ~560KB | ~120KB | ~2.9MB |
+| **Full** (area) | ~610KB | ~130KB | ~3.4MB |

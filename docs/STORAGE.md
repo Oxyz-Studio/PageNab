@@ -1,190 +1,230 @@
-# Storage Management
+# Storage
 
 ## Vue d'ensemble
 
-PageNab stocke les captures localement dans `~/.pagenab/`. Le systeme de stockage est concu pour etre transparent, previsible et auto-gere.
+PageNab V1 utilise trois couches de stockage :
+1. **Clipboard** (ephemere) : text/plain + image/png pour le collage immediat
+2. **chrome.downloads** (persistant) : screenshots en fichiers PNG
+3. **chrome.storage.local** (persistant) : historique des captures + settings
 
-## Structure du repertoire
+## 1. Clipboard — collage immediat
 
-```
-~/.pagenab/
-├── captures/
-│   ├── 2026-03-01_14-23-45_app.example.com/
-│   │   ├── screenshot.png
-│   │   ├── element.png
-│   │   ├── console.json
-│   │   ├── network.json
-│   │   ├── dom.html
-│   │   ├── locators.json
-│   │   └── metadata.json
-│   ├── 2026-03-01_14-30-12_dashboard.example.com/
-│   │   └── ...
-│   └── ...
-├── latest -> captures/2026-03-01_14-30-12_dashboard.example.com
-├── config.json
-└── host/
-    ├── pagenab-host.js
-    └── manifest.json
+Le clipboard contient deux formats simultanement via `ClipboardItem` :
+
+```javascript
+const clipboardItem = new ClipboardItem({
+  'text/plain': new Blob([textData], { type: 'text/plain' }),
+  'image/png': screenshotBlob
+})
+await navigator.clipboard.write([clipboardItem])
 ```
 
-## Configuration
+- **text/plain** : donnees textuelles (metadata, console, network, cookies, storage, perf, interactions, DOM optionnel selon le preset)
+- **image/png** : screenshot (full page, ou area si mode area)
 
-### config.json
+Quand l'utilisateur colle, l'image s'attache directement (comme un screenshot natif) et le texte fournit le contexte.
 
-```json
-{
-  "maxCaptures": 20,
-  "maxAgeDays": 7,
-  "maxStorageMB": 500,
-  "captureDir": "~/.pagenab",
-  "clipboardFormat": "hybrid",
-  "autoScreenshot": true,
-  "sanitizeHeaders": true,
-  "notifications": true
-}
+Le clipboard est ephemere — il est ecrase au prochain copier. Les screenshots sont aussi sauvegardes dans Downloads pour la persistance.
+
+## 2. Screenshots → chrome.downloads
+
+Les screenshots sont sauvegardes dans le dossier Downloads pour la persistance.
+
+```javascript
+// Full page (toujours)
+chrome.downloads.download({
+  url: screenshotDataUrl,
+  filename: `pagenab-${domain}-${timestamp}.png`,
+  saveAs: false  // silencieux, pas de dialog
+})
+
+// Area (en plus du full page, si mode area)
+chrome.downloads.download({
+  url: areaDataUrl,
+  filename: `pagenab-${domain}-${timestamp}-area.png`,
+  saveAs: false
+})
 ```
 
-### Parametres
+**Nommage** :
+- Full page : `pagenab-{domain}-{YYYY-MM-DD_HH-mm-ss}.png`
+- Area : `pagenab-{domain}-{YYYY-MM-DD_HH-mm-ss}-area.png`
 
-| Parametre | Type | Defaut | Description |
-|-----------|------|--------|-------------|
-| `maxCaptures` | number | 20 | Nombre max de captures conservees |
-| `maxAgeDays` | number | 7 | Suppression auto apres N jours |
-| `maxStorageMB` | number | 500 | Taille max totale du dossier captures |
-| `captureDir` | string | `~/.pagenab` | Repertoire racine |
-| `clipboardFormat` | string | `hybrid` | Format du prompt : `hybrid`, `paths-only`, `full-inline` |
-| `autoScreenshot` | boolean | `true` | Screenshot automatique a chaque capture |
-| `sanitizeHeaders` | boolean | `true` | Retirer les headers sensibles |
-| `notifications` | boolean | `true` | Notification apres capture |
+**Utilite** :
+- Backup si le clipboard est ecrase avant le collage
+- Source image pour re-copier depuis l'historique
+- Reference dans le text/plain pour les outils CLI qui lisent les fichiers par chemin
 
-## Politique de rotation
+## 3. Historique + Settings → chrome.storage.local
 
-La rotation s'execute **avant** chaque nouvelle capture pour garantir que l'espace est disponible.
+### Structure d'une capture stockee
 
-### Algorithme de rotation
+```typescript
+interface StoredCapture {
+  id: string                    // "{timestamp}_{domain}"
+  timestamp: string             // ISO 8601
+  url: string                   // URL complete
+  domain: string                // Domaine seul
+  title: string                 // Titre de la page
 
-```
-function rotate():
-  captures = listCaptures().sortByDate(oldest_first)
+  screenshotThumbnail: string   // Base64 miniature (~50KB) pour preview popup
+  screenshotPath: string        // Chemin du fichier dans Downloads
+  areaScreenshotPath?: string   // Chemin area si applicable
 
-  // 1. Supprimer les captures expirees (age)
-  for capture in captures:
-    if capture.age > maxAgeDays:
-      delete(capture)
+  preset: 'light' | 'full' | 'custom'  // Preset utilise pour cette capture
+  capturedData: string[]        // Liste des donnees capturees ["console", "network", "dom", ...]
 
-  // 2. Supprimer les captures excedentaires (nombre)
-  captures = listCaptures().sortByDate(oldest_first)
-  while captures.length >= maxCaptures:
-    delete(captures.shift())  // supprime la plus ancienne
+  // Donnees toujours presentes
+  metadata: CaptureMetadata
 
-  // 3. Supprimer si taille totale depasse la limite
-  captures = listCaptures().sortByDate(oldest_first)
-  while totalSize(captures) > maxStorageMB * 1024 * 1024:
-    delete(captures.shift())  // supprime la plus ancienne
-```
-
-### Priorites de suppression
-
-1. **Age** : les captures plus vieilles que `maxAgeDays` sont toujours supprimees
-2. **Nombre** : si plus de `maxCaptures`, les plus anciennes sont supprimees
-3. **Taille** : si la taille totale depasse `maxStorageMB`, les plus anciennes sont supprimees
-
-### Impact reel sur le stockage
-
-| Scenario | Captures/jour | Taille/capture | Stockage utilise |
-|----------|--------------|----------------|-----------------|
-| Usage leger | 2-3 | ~600KB | ~12MB (20 captures) |
-| Usage normal | 5-10 | ~600KB | ~12MB (20 captures max) |
-| Usage intensif | 20+ | ~1MB | ~20MB (rotation active) |
-
-Avec les parametres par defaut, **le stockage ne depassera jamais 20 captures * ~2MB = ~40MB** dans le pire cas.
-
-## Symlink `latest`
-
-Le symlink `~/.pagenab/latest` pointe toujours vers la capture la plus recente :
-
-```bash
-ls -la ~/.pagenab/latest
-# latest -> captures/2026-03-01_14-30-12_dashboard.example.com
-```
-
-Cela permet au prompt clipboard de toujours referencer `~/.pagenab/latest/` quel que soit le nom du dossier. L'utilisateur n'a pas besoin de connaitre le timestamp.
-
-**Mise a jour** : le symlink est recree (delete + create) a chaque nouvelle capture.
-
-**Fallback Windows** : Windows ne supporte pas les symlinks sans privileges admin. Sur Windows, `latest` est un fichier texte contenant le chemin du dernier dossier de capture.
-
-## Native Messaging Host
-
-### Role
-
-Le Native Messaging Host est un petit script Node.js qui recoit les donnees de capture depuis l'extension Chrome et les ecrit sur le disque.
-
-### Protocole
-
-Communication via stdin/stdout avec le format Native Messaging de Chrome :
-- Chaque message est prefixe par 4 bytes (uint32 little-endian) indiquant la taille
-- Le contenu est du JSON
-
-### Messages
-
-**Extension -> Host** :
-```json
-{
-  "type": "write_capture",
-  "captureId": "2026-03-01_14-23-45_app.example.com",
-  "files": {
-    "metadata.json": "{ ... }",
-    "console.json": "{ ... }",
-    "network.json": "{ ... }",
-    "dom.html": "<!DOCTYPE html>...",
-    "locators.json": "{ ... }",
-    "screenshot.png": "<base64>",
-    "element.png": "<base64>"
+  // Donnees conditionnelles (presentes si capturees selon le preset)
+  console?: {
+    summary: { errors: number; warnings: number; logs: number; info: number }
+    logs: ConsoleLog[]
   }
+
+  network?: {
+    summary: { total: number; failed: number; slow: number }
+    failed: NetworkRequest[]
+    slow: NetworkRequest[]
+  }
+
+  dom?: string                  // DOM snapshot complet nettoye
+
+  cookies?: {
+    summary: { total: number }
+    cookies: CookieEntry[]
+  }
+
+  storage?: {
+    localStorage: {
+      summary: { keys: number; totalSize: string }
+      entries: StorageEntry[]
+    }
+    sessionStorage: {
+      summary: { keys: number; totalSize: string }
+      entries: StorageEntry[]
+    }
+  }
+
+  interactions?: {
+    summary: { total: number; clicks: number; scrolls: number; inputs: number }
+    events: InteractionEvent[]
+  }
+
+  performance?: {
+    loadTime: number
+    domContentLoaded: number
+    firstPaint: number
+    firstContentfulPaint: number
+    largestContentfulPaint: number
+    cumulativeLayoutShift: number
+    firstInputDelay: number
+    memoryUsed?: number
+    memoryLimit?: number
+  }
+
+  captureMode: 'fullpage' | 'area'
 }
 ```
 
-**Host -> Extension** :
+### Settings
+
+```typescript
+interface Settings {
+  preset: 'light' | 'full' | 'custom'   // Dernier preset selectionne
+  customOptions: {                        // Options pour le preset Custom
+    console: boolean    // defaut: true
+    network: boolean    // defaut: true
+    dom: boolean        // defaut: false
+    cookies: boolean    // defaut: false
+    storage: boolean    // defaut: false
+    interactions: boolean // defaut: false
+    performance: boolean // defaut: false
+  }
+  screenshotMode: 'fullpage' | 'area'    // Dernier mode selectionne
+  notifications: boolean                  // Notification apres capture
+  maxCaptures: number                     // Limite historique (defaut 20)
+  shortcut: string                        // Raccourci custom (ex: "Ctrl+Shift+N")
+}
+```
+
+**Valeurs par defaut** :
+
 ```json
 {
-  "type": "write_complete",
-  "captureId": "2026-03-01_14-23-45_app.example.com",
-  "path": "/Users/alex/.pagenab/captures/2026-03-01_14-23-45_app.example.com",
-  "latestPath": "/Users/alex/.pagenab/latest"
+  "preset": "light",
+  "customOptions": {
+    "console": true,
+    "network": true,
+    "dom": false,
+    "cookies": false,
+    "storage": false,
+    "interactions": false,
+    "performance": false
+  },
+  "screenshotMode": "fullpage",
+  "notifications": true,
+  "maxCaptures": 20,
+  "shortcut": "Ctrl+Shift+N"
 }
 ```
 
-### Installation
+### Organisation dans chrome.storage.local
 
-Script d'installation automatique (`install-host.js`) :
-
-```bash
-npx pagenab-host install
+```json
+{
+  "captures": [ /* StoredCapture[] ordonne du plus recent au plus ancien */ ],
+  "settings": { /* Settings */ }
+}
 ```
 
-Ce script :
-1. Cree le repertoire `~/.pagenab/host/`
-2. Copie `pagenab-host.js` dans ce repertoire
-3. Genere le manifest Native Messaging :
-   ```json
-   {
-     "name": "com.oxyz.pagenab",
-     "description": "PageNab Native Messaging Host",
-     "path": "/Users/alex/.pagenab/host/pagenab-host.js",
-     "type": "stdio",
-     "allowed_origins": ["chrome-extension://EXTENSION_ID/"]
-   }
-   ```
-4. Place le manifest dans le repertoire Chrome :
-   - macOS : `~/Library/Application Support/Google/Chrome/NativeMessagingHosts/`
-   - Linux : `~/.config/google-chrome/NativeMessagingHosts/`
-   - Windows : registre `HKCU\Software\Google\Chrome\NativeMessagingHosts\`
+## Limites de stockage
 
-### Mode fallback (sans Native Host)
+### chrome.storage.local
 
-Si le Native Host n'est pas installe, PageNab fonctionne en mode "download" :
-- Les captures sont packagées en fichier `.zip`
-- Telechargees via `chrome.downloads` dans le dossier Downloads
-- Le prompt clipboard reference le fichier telecharge
-- Moins fluide mais zero installation supplementaire
+- **Quota** : 10 MB par defaut
+- **Taille par capture** :
+  - Light : ~70-100 KB (thumbnail ~50KB + console ~10KB + network ~5KB + metadata ~1KB)
+  - Full : ~150-250 KB (thumbnail + console + network + DOM ~100KB + cookies ~3KB + storage ~10KB + interactions ~8KB + perf ~2KB + metadata)
+  - Custom : variable selon les donnees selectionnees
+- **Capacite estimee** : ~40-100 captures dans 10MB selon le preset
+- Avec le defaut de 20 captures : ~1.5-5 MB utilises. Large marge.
+
+### Gestion de la limite
+
+Quand une nouvelle capture est ajoutee et que `captures.length >= maxCaptures` :
+
+```
+function addCapture(newCapture):
+  captures = await getCaptures()
+  captures.unshift(newCapture)  // Ajouter en tete
+
+  while captures.length > settings.maxCaptures:
+    captures.pop()  // Supprimer la plus ancienne
+
+  await chrome.storage.local.set({ captures })
+```
+
+Les screenshots dans Downloads ne sont PAS supprimes automatiquement.
+
+### Suppression manuelle
+
+L'utilisateur peut supprimer une capture depuis l'ecran History (bouton ✕). Cela retire la capture de `chrome.storage.local` uniquement (pas du dossier Downloads).
+
+### Re-copier depuis l'historique
+
+Quand l'utilisateur clique "Copy" sur une capture dans l'historique :
+1. Le texte est re-genere avec le preset actuellement selectionne
+2. Seules les donnees effectivement capturees sont incluses (on ne peut pas generer du DOM si la capture Light ne l'a pas capture)
+3. L'image est chargee depuis le fichier Downloads (via le chemin stocke)
+4. Si le fichier a ete supprime : la miniature est utilisee comme fallback
+5. Le clipboard est rempli en multi-format (text/plain + image/png)
+6. L'utilisateur peut coller immediatement
+
+## Evolution V2
+
+- Native Messaging Host : ecriture dans `~/.pagenab/` avec structure organisee
+- Rotation automatique (maxCaptures, maxAge, maxStorage) incluant les fichiers Downloads
+- Symlink `latest` pour referencer la derniere capture
+- MCP Server lisant depuis `~/.pagenab/`

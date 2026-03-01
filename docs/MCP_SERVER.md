@@ -1,8 +1,10 @@
-# MCP Server Specification
+# MCP Server Specification (V2)
+
+> **Note** : le MCP Server est prevu pour la V2 de PageNab. Il necessite un stockage local structure (`~/.pagenab/`) qui sera implemente via Native Messaging Host en V2.
 
 ## Vue d'ensemble
 
-Le MCP server PageNab est un package npm **optionnel** (`pagenab-mcp`) qui expose les captures locales comme outils MCP, permettant a Claude Code, Cursor, ou tout client MCP d'acceder directement aux donnees sans lecture manuelle de fichiers.
+Le MCP server PageNab sera un package npm optionnel (`pagenab-mcp`) qui expose les captures locales comme outils MCP, permettant a Claude Code, Cursor, ou tout client MCP d'acceder directement aux donnees sans lecture manuelle de fichiers.
 
 ## Pourquoi un MCP server ?
 
@@ -15,7 +17,16 @@ Le MCP server PageNab est un package npm **optionnel** (`pagenab-mcp`) qui expos
 
 Le MCP server est un **bonus pour power users**, pas un prerequis.
 
-## Installation
+## Prerequis V2
+
+Le MCP server necessite :
+1. **Native Messaging Host** : pour ecrire les captures dans `~/.pagenab/`
+2. **Structure de dossiers** : captures organisees dans `~/.pagenab/captures/`
+3. **Symlink `latest`** : pour pointer sur la derniere capture
+
+Sans ces elements, le MCP server n'a pas de source de donnees a lire.
+
+## Installation prevue
 
 ### Configuration Claude Code
 
@@ -23,25 +34,7 @@ Le MCP server est un **bonus pour power users**, pas un prerequis.
 claude mcp add --transport stdio pagenab -- npx pagenab-mcp
 ```
 
-Ou manuellement dans `.mcp.json` :
-
-```json
-{
-  "mcpServers": {
-    "pagenab": {
-      "command": "npx",
-      "args": ["pagenab-mcp"],
-      "env": {
-        "PAGENAB_DIR": "~/.pagenab"
-      }
-    }
-  }
-}
-```
-
 ### Configuration Cursor
-
-Dans Cursor Settings > MCP Servers, ajouter :
 
 ```json
 {
@@ -52,142 +45,21 @@ Dans Cursor Settings > MCP Servers, ajouter :
 }
 ```
 
-## Outils exposes
+## Outils prevus
 
-### `get_latest_capture`
+| Outil | Description |
+|-------|-------------|
+| `get_latest_capture` | Metadata + resume de la derniere capture |
+| `get_capture_screenshot` | Screenshot PNG (base64) |
+| `get_capture_console` | Logs console (filtrable par niveau) |
+| `get_capture_network` | Requetes reseau (filtrable : failed/slow) |
+| `get_capture_dom` | DOM snapshot HTML |
+| `list_captures` | Liste des captures disponibles |
 
-Retourne les metadata + resume de la derniere capture.
-
-**Parametres** : aucun
-
-**Retour** :
-```json
-{
-  "content": [
-    {
-      "type": "text",
-      "text": "{\n  \"url\": \"https://app.example.com/dashboard\",\n  \"timestamp\": \"2026-03-01T14:23:45.123Z\",\n  \"console\": { \"errors\": 3, \"warnings\": 1 },\n  \"network\": { \"failed\": 2 },\n  \"hasSelectedElement\": true,\n  \"files\": [\"screenshot.png\", \"element.png\", \"console.json\", ...]\n}"
-    }
-  ]
-}
-```
-
-### `get_capture_screenshot`
-
-Retourne le screenshot pleine page ou de l'element selectionne.
-
-**Parametres** :
-| Nom | Type | Defaut | Description |
-|-----|------|--------|-------------|
-| `type` | `"page" \| "element"` | `"page"` | Type de screenshot |
-| `captureId` | `string?` | latest | ID de la capture (timestamp_domain) |
-
-**Retour** :
-```json
-{
-  "content": [
-    {
-      "type": "image",
-      "data": "<base64-encoded-png>",
-      "mimeType": "image/png"
-    }
-  ]
-}
-```
-
-### `get_capture_console`
-
-Retourne les logs console complets.
-
-**Parametres** :
-| Nom | Type | Defaut | Description |
-|-----|------|--------|-------------|
-| `level` | `"all" \| "error" \| "warning" \| "log"` | `"all"` | Filtrer par niveau |
-| `captureId` | `string?` | latest | ID de la capture |
-
-**Retour** : contenu de `console.json` filtre.
-
-### `get_capture_network`
-
-Retourne les requetes reseau echouees/lentes.
-
-**Parametres** :
-| Nom | Type | Defaut | Description |
-|-----|------|--------|-------------|
-| `filter` | `"all" \| "failed" \| "slow"` | `"all"` | Type de requetes |
-| `captureId` | `string?` | latest | ID de la capture |
-
-**Retour** : contenu de `network.json` filtre.
-
-### `get_capture_dom`
-
-Retourne le DOM snapshot.
-
-**Parametres** :
-| Nom | Type | Defaut | Description |
-|-----|------|--------|-------------|
-| `captureId` | `string?` | latest | ID de la capture |
-
-**Retour** : contenu de `dom.html`.
-
-### `get_capture_locators`
-
-Retourne les locators Playwright generes.
-
-**Parametres** :
-| Nom | Type | Defaut | Description |
-|-----|------|--------|-------------|
-| `minConfidence` | `number` | `0.5` | Score de confiance minimum |
-| `captureId` | `string?` | latest | ID de la capture |
-
-**Retour** : contenu de `locators.json` filtre par confiance.
-
-### `list_captures`
-
-Liste toutes les captures disponibles.
-
-**Parametres** :
-| Nom | Type | Defaut | Description |
-|-----|------|--------|-------------|
-| `limit` | `number` | `10` | Nombre max de captures |
-
-**Retour** :
-```json
-{
-  "content": [
-    {
-      "type": "text",
-      "text": "[\n  { \"id\": \"2026-03-01_14-30-12_dashboard.example.com\", \"url\": \"...\", \"timestamp\": \"...\", \"isLatest\": true },\n  { \"id\": \"2026-03-01_14-23-45_app.example.com\", \"url\": \"...\", \"timestamp\": \"...\", \"isLatest\": false }\n]"
-    }
-  ]
-}
-```
-
-## Implementation technique
-
-### Transport
-
-**stdio** uniquement. Le serveur est lance comme processus enfant par Claude Code / Cursor.
-
-### Dependances
+## Dependances prevues
 
 - `@modelcontextprotocol/sdk` : SDK MCP officiel
 - `fs/promises` : lecture des fichiers de capture
 - `path` : resolution des chemins
 
-Pas de dependance lourde. Le package doit rester leger (< 1MB installe).
-
-### Gestion des erreurs
-
-| Erreur | Reponse MCP |
-|--------|------------|
-| Pas de capture disponible | `{ "content": [{ "type": "text", "text": "No captures found in ~/.pagenab/" }] }` |
-| Fichier manquant | `{ "content": [{ "type": "text", "text": "File not found: screenshot.png" }] }` |
-| Capture corrompue | `{ "content": [{ "type": "text", "text": "Capture corrupted: invalid metadata.json" }] }` |
-| Repertoire inexistant | `{ "content": [{ "type": "text", "text": "PageNab directory not found. Install PageNab first." }] }` |
-
-### Taille des reponses
-
-- Screenshots : limites a 1MB (redimensionnes si necessaire)
-- DOM : limite a 500KB
-- Console/Network : pas de limite (deja capes a la capture)
+Package leger : < 1MB installe.

@@ -1,6 +1,6 @@
 # Implementation Steps
 
-Guide d'implementation sequentiel pour PageNab.
+Guide d'implementation sequentiel pour PageNab V1.
 
 ## Etape 1 : Scaffolding
 
@@ -9,24 +9,27 @@ Guide d'implementation sequentiel pour PageNab.
 - [ ] Init projet Plasmo (`npm create plasmo`)
 - [ ] Configurer TypeScript strict
 - [ ] Installer Tailwind CSS 4
-- [ ] Importer le design system OSAIT (couleurs, typographie, composants de base)
 - [ ] Configurer ESLint + Prettier
 - [ ] Configurer Vitest
-- [ ] Creer la structure de dossiers (`src/background/`, `src/content/`, `src/popup/`, etc.)
-- [ ] Manifest V3 avec permissions minimales
+- [ ] Creer la structure de dossiers (`src/background/`, `src/content/`, `src/popup/`, `src/lib/`)
+- [ ] Manifest V3 avec permissions (`activeTab`, `clipboardWrite`, `storage`, `downloads`, `notifications`)
 - [ ] Verifier que `npm run dev` charge l'extension dans Chrome
 
 **Livrable** : extension Chrome qui s'affiche dans la barre d'outils avec une icone et un popup vide.
 
-## Etape 2 : Capture de base
+## Etape 2 : Types et capture de base (screenshot + metadata)
 
 **Objectif** : capturer screenshot + metadata en un clic.
 
-- [ ] Background service worker : handler de message
+- [ ] Types TypeScript : `CaptureBundle`, `Metadata`, `StoredCapture`, `Settings`, `Preset`, messages Chrome (discriminated unions)
+- [ ] Type `Preset` : `'light' | 'full' | 'custom'` avec `CustomOptions` (toggles par donnee)
+- [ ] Background service worker : handler de message principal
 - [ ] `chrome.tabs.captureVisibleTab()` pour le screenshot
-- [ ] Collecte des metadata (URL, title, viewport, userAgent, timestamp)
-- [ ] Assembler le CaptureBundle (types TypeScript)
-- [ ] Popup : bouton "Nab this page" qui declenche la capture
+- [ ] Collecte des metadata (URL, title, viewport, userAgent, timestamp, language, colorScheme, preset, capturedData)
+- [ ] Assembler le CaptureBundle
+- [ ] Sauvegarde screenshot via `chrome.downloads.download({ saveAs: false })`
+- [ ] Popup : bouton "Nab this page" (pleine largeur) qui declenche la capture
+- [ ] Etats du popup : idle, capturing (spinner), success (miniature + resume), error
 - [ ] Notification de succes apres capture
 - [ ] Tests unitaires pour les types et l'assemblage
 
@@ -39,124 +42,114 @@ Guide d'implementation sequentiel pour PageNab.
 - [ ] Content script : injection on-demand via `chrome.scripting.executeScript`
 - [ ] Capture console : monkey-patch `console.*` + `window.onerror` + `window.onunhandledrejection`
 - [ ] Capture network : `PerformanceObserver` + `performance.getEntriesByType('resource')`
-- [ ] Sanitization des headers sensibles
-- [ ] Format console.json et network.json conforme a la spec
+- [ ] Sanitization des headers sensibles (Authorization, Cookie, tokens)
+- [ ] Format console et network conforme a la spec CAPTURE_FORMAT.md
+- [ ] Logic preset : Light = errors+warnings + failed only | Full = all levels + failed+slow
 - [ ] Communication content script → background via `chrome.runtime.sendMessage`
 - [ ] Tests unitaires pour la sanitization et le formatage
 
-**Livrable** : la capture inclut les logs console et les requetes reseau echouees.
+**Livrable** : la capture inclut les logs console et les requetes reseau echouees/lentes.
 
-## Etape 4 : Content Script — DOM Snapshot
+## Etape 4 : Content Script — DOM + Cookies + Storage + Performance
 
-**Objectif** : capturer un snapshot DOM nettoye.
+**Objectif** : capturer les donnees conditionnelles (selon le preset).
 
-- [ ] Extraction DOM : `document.documentElement.outerHTML`
-- [ ] Nettoyage : retirer scripts, nettoyer passwords, limiter taille
-- [ ] Format dom.html conforme a la spec
-- [ ] Gestion de la taille (troncation intelligente a 500KB)
-- [ ] Tests unitaires pour le nettoyage DOM
+- [ ] DOM : extraction `document.documentElement.outerHTML`, nettoyage (scripts, passwords, commentaires), troncation 500KB
+- [ ] Cookies : lecture `document.cookie`, sanitization (valeurs tronquees, cookies sensibles masques)
+- [ ] Storage : lecture `localStorage` + `sessionStorage`, sanitization (cles sensibles, valeurs tronquees a 200 chars)
+- [ ] Performance : `performance.getEntriesByType('navigation')`, `PerformanceObserver` (LCP, CLS, FID), `performance.memory`
+- [ ] Chaque module n'est appele que si le preset l'exige
+- [ ] Tests unitaires pour le nettoyage DOM, la sanitization cookies/storage, les metriques performance
 
-**Livrable** : la capture inclut un DOM snapshot nettoye.
+**Livrable** : la capture inclut DOM, cookies, storage, et performance selon le preset.
 
-## Etape 5 : Locators Playwright
+## Etape 5 : Content Script — Interactions (persistent)
 
-**Objectif** : generer des locators Playwright pour les elements interactifs.
+**Objectif** : tracker les dernieres interactions utilisateur.
 
-- [ ] Detection des elements interactifs (buttons, links, inputs, selects, etc.)
-- [ ] Generation de locators par priorite : getByRole > getByTestId > getByText > getByLabel > CSS
-- [ ] Score de confiance pour chaque locator
-- [ ] Format locators.json conforme a la spec
-- [ ] Tests unitaires pour la generation de locators
+- [ ] `interactions.ts` : content script persistant avec buffer circulaire de 50 events
+- [ ] Ecoute : `click`, `scroll`, `input`, `change`
+- [ ] Sanitization : valeurs d'inputs TOUJOURS masquees, pas de frappes clavier individuelles
+- [ ] Enregistrement via `chrome.scripting.registerContentScripts` (uniquement quand active)
+- [ ] Desenregistrement quand le preset ne requiert plus les interactions
+- [ ] Le background demande le buffer au content script via messaging lors de la capture
+- [ ] Tests unitaires pour le buffer circulaire et la sanitization
 
-**Livrable** : la capture inclut des locators Playwright avec scores de confiance.
+**Livrable** : la capture inclut les dernieres interactions utilisateur (si le preset l'active).
 
-## Etape 6 : Selection d'element
+## Etape 6 : Clipboard multi-format + Presets
 
-**Objectif** : permettre a l'utilisateur de selectionner un element specifique.
+**Objectif** : copier les donnees dans le clipboard en multi-format (text + image) selon le preset.
 
-- [ ] Mode selection : overlay CSS injecte dans la page
-- [ ] Highlight au survol (border animee)
-- [ ] Click pour selectionner l'element
-- [ ] Capture du sous-arbre DOM de l'element selectionne
-- [ ] Screenshot crop de l'element (bounding box)
-- [ ] Mise a jour des metadata (hasSelectedElement, selectedElementSelector)
-- [ ] Bouton toggle dans le popup pour activer/desactiver le mode selection
-- [ ] Touche Echap pour annuler la selection
+- [ ] Offscreen document pour acceder a `navigator.clipboard.write`
+- [ ] Ecriture multi-format : `ClipboardItem` avec `text/plain` + `image/png`
+- [ ] Generateur de texte Light (metadata + console errors/warnings + network failed)
+- [ ] Generateur de texte Full (metadata + console all + network all + cookies + storage + perf + interactions + DOM)
+- [ ] Generateur de texte Custom (sections presentes selon les toggles)
+- [ ] Inclusion du chemin screenshot dans le texte
+- [ ] Switches sur l'ecran principal du popup : screenshot mode (full page / area) + preset (Light / Full / Custom)
+- [ ] Checkboxes donnees (visibles uniquement en Custom) : Console, Network, DOM, Cookies, Storage, Interactions, Performance
+- [ ] Persistance des settings dans `chrome.storage.local`
+- [ ] Tests unitaires pour chaque format de texte et l'assemblage ClipboardItem
 
-**Livrable** : l'utilisateur peut selectionner un element specifique avant de capturer.
+**Livrable** : apres capture, le clipboard contient texte + image. Coller attache l'image directement.
 
-## Etape 7 : Stockage local + Native Messaging Host
+## Etape 7 : Area Capture
 
-**Objectif** : ecrire les captures sur le disque local.
+**Objectif** : permettre de selectionner une zone rectangulaire de la page.
 
-- [ ] Native Messaging Host (Node.js script)
-- [ ] Protocole de communication (messages JSON avec prefixe taille)
-- [ ] Ecriture des fichiers dans `~/.pagenab/captures/{id}/`
-- [ ] Creation/mise a jour du symlink `latest`
-- [ ] Rotation automatique (maxCaptures, maxAge, maxStorage)
-- [ ] Script d'installation (`npx pagenab-host install`)
-- [ ] Manifest Native Messaging (macOS, Linux, Windows)
-- [ ] Mode fallback : telechargement .zip si Native Host absent
-- [ ] Tests unitaires pour la rotation et l'ecriture
+- [ ] `area-selector.ts` : overlay semi-opaque injecte dans la page
+- [ ] Curseur crosshair, barre d'instructions en bas ("Draw a rectangle · Esc to cancel")
+- [ ] Gestion click + drag pour dessiner le rectangle
+- [ ] Zone selectionnee : claire (non opaque), reste : overlay sombre
+- [ ] Esc pour annuler (retire l'overlay, annule la capture)
+- [ ] Relacher le clic = capture se declenche avec les coordonnees
+- [ ] Background : crop du screenshot full page avec canvas offscreen
+- [ ] Sauvegarde des deux screenshots (full + area) via chrome.downloads
+- [ ] Clipboard : image/png = area screenshot (plus pertinent), texte mentionne les deux fichiers
+- [ ] Le popup se ferme quand le mode area est declenche
+- [ ] Tests unitaires pour le calcul des coordonnees et le crop
 
-**Livrable** : les captures sont sauvegardees dans `~/.pagenab/` avec rotation automatique.
+**Livrable** : l'utilisateur peut dessiner une zone. Le clipboard contient la zone + texte.
 
-## Etape 8 : Prompt Clipboard
+## Etape 8 : Historique
 
-**Objectif** : generer et copier le prompt structure dans le clipboard.
+**Objectif** : stocker et consulter les captures precedentes.
 
-- [ ] Generateur de prompt format hybrid (resume + chemins)
-- [ ] Generateur de prompt format paths-only
-- [ ] Generateur de prompt format full-inline
-- [ ] Copie clipboard via `chrome.offscreen` + `navigator.clipboard.writeText`
-- [ ] Setting pour choisir le format de prompt
-- [ ] Tests unitaires pour chaque format de prompt
+- [ ] `history.ts` (background) : CRUD captures dans `chrome.storage.local`
+- [ ] Sauvegarde automatique apres chaque capture (thumbnail + donnees completes capturees)
+- [ ] Generation de la miniature screenshot (~50KB, redimensionnee)
+- [ ] Respect de la limite `maxCaptures` (suppression des plus anciennes)
+- [ ] Chaque capture stocke le preset utilise + la liste `capturedData`
+- [ ] Ecran History dans le popup : liste scrollable avec miniature + domaine + heure + resume + preset + badges donnees
+- [ ] Bouton Copy : re-genere le texte (avec le preset actuel, limite aux donnees capturees) + charge l'image depuis Downloads → clipboard multi-format
+- [ ] Bouton Details : affiche la vue detaillee (screenshot, console, network, DOM stats, cookies, storage, interactions, perf)
+- [ ] Bouton ✕ : supprime la capture de l'historique
+- [ ] Compteur en bas : "N captures · X.X MB used"
 
-**Livrable** : apres capture, le prompt est copie dans le clipboard, pret a coller.
+**Livrable** : l'utilisateur peut consulter, re-copier et supprimer ses captures passees.
 
-## Etape 9 : Popup UI complete
+## Etape 9 : Raccourci clavier custom + UI complete + Settings
 
-**Objectif** : interface utilisateur polie avec le design system.
+**Objectif** : raccourci clavier configurable + interface utilisateur polie.
 
+- [ ] Enregistreur de touches dans Settings : champ cliquable, capture la combinaison
+- [ ] Stockage du raccourci dans `chrome.storage.local`
+- [ ] Detection du raccourci : content script leger qui ecoute les evenements clavier
+- [ ] Le raccourci respecte le dernier mode (full page = capture directe, area = overlay) et le dernier preset
+- [ ] Notification Chrome apres capture (domaine + nombre erreurs)
+- [ ] Valeur par defaut : Ctrl+Shift+N (Cmd+Shift+N sur macOS)
 - [ ] Design du popup avec le design system OSAIT
-- [ ] Bouton principal "Nab this page" (avec raccourci clavier affiche)
-- [ ] Toggle "Select element"
-- [ ] Preview rapide de la derniere capture (miniature screenshot + resume)
-- [ ] Lien vers les settings
-- [ ] Page Settings : configuration stockage, format prompt, raccourci
+- [ ] Ecran principal : preset selector + switches + bouton + derniere capture + hint raccourci
+- [ ] Header : logo PageNab + icones history et settings
+- [ ] Etats : idle, idle avec derniere capture, idle Custom (avec checkboxes), capturing, success, success area (2 miniatures), error
+- [ ] Page Settings : notifications on/off, raccourci clavier (enregistreur), max captures (input)
 - [ ] Animations et transitions fluides
-- [ ] Etats : idle, capturing, success, error
+- [ ] Footer settings : version + licence + lien GitHub
 
-**Livrable** : popup fonctionnel et poli.
+**Livrable** : popup fonctionnel et poli avec tous les ecrans + raccourci operationnel.
 
-## Etape 10 : MCP Server
-
-**Objectif** : package npm `pagenab-mcp` pour les power users.
-
-- [ ] Creer le package `pagenab-mcp` (dans `src/mcp/` ou package separe)
-- [ ] Implementer le serveur stdio MCP
-- [ ] Outils : get_latest_capture, get_capture_screenshot, get_capture_console, get_capture_network, get_capture_dom, get_capture_locators, list_captures
-- [ ] Gestion des erreurs (pas de capture, fichier manquant, etc.)
-- [ ] README d'installation pour Claude Code et Cursor
-- [ ] Tests unitaires pour chaque outil MCP
-
-**Livrable** : `npx pagenab-mcp` fonctionne comme serveur MCP.
-
-## Etape 11 : Tests E2E
-
-**Objectif** : tests end-to-end de l'extension complete.
-
-- [ ] Setup Playwright pour tester l'extension Chrome
-- [ ] Test : capture basique (screenshot + metadata)
-- [ ] Test : capture complete (console + network + DOM + locators)
-- [ ] Test : selection d'element
-- [ ] Test : rotation du stockage
-- [ ] Test : formats de prompt (hybrid, paths-only, full-inline)
-- [ ] Test : mode fallback (sans Native Host)
-
-**Livrable** : suite de tests E2E qui valide le workflow complet.
-
-## Etape 12 : Publication
+## Etape 10 : Publication
 
 **Objectif** : publier sur Chrome Web Store et GitHub.
 
@@ -168,6 +161,13 @@ Guide d'implementation sequentiel pour PageNab.
 - [ ] Soumettre au Chrome Web Store
 - [ ] Creer la release GitHub (v1.0.0)
 - [ ] Mettre a jour le README avec le lien Chrome Web Store
-- [ ] Post de lancement (GitHub, Reddit r/ClaudeAI, X/Twitter, HackerNews)
 
 **Livrable** : PageNab disponible sur le Chrome Web Store.
+
+## Etapes V2 (futur)
+
+- **Element Selector** : selection visuelle basee sur le DOM, capture sous-arbre + screenshot crop
+- **Native Messaging Host** : ecriture `~/.pagenab/`, rotation automatique, symlink `latest`
+- **MCP Server** : package `pagenab-mcp` pour Claude Code / Cursor
+- **Locators Playwright** : generation automatique de locators
+- **Tests E2E** : suite de tests pour valider le workflow complet
