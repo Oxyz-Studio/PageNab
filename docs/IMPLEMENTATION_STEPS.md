@@ -139,7 +139,7 @@ Guide d'implementation sequentiel pour PageNab V1.
 - [ ] Le raccourci respecte le dernier mode (full page = capture directe, area = overlay) et le dernier preset
 - [ ] Notification Chrome apres capture (domaine + nombre erreurs)
 - [ ] Valeur par defaut : Ctrl+Shift+N (Cmd+Shift+N sur macOS)
-- [ ] Design du popup avec le design system OSAIT
+- [ ] Design du popup avec Tailwind CSS (design neutre)
 - [ ] Ecran principal : preset selector + switches + bouton + derniere capture + hint raccourci
 - [ ] Header : logo PageNab + icones history et settings
 - [ ] Etats : idle, idle avec derniere capture, idle Custom (avec checkboxes), capturing, success, success area (2 miniatures), error

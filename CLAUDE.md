@@ -8,8 +8,6 @@ This file provides guidance to Claude Code when working with code in this reposi
 
 Un clic. Contexte complet. Coller et c'est parti.
 
-**Lien avec OSAIT** : PageNab est le produit gratuit/open source d'acquisition pour le SaaS OSAIT (osait.fr). L'extension fonctionne en standalone mais pourra a terme envoyer des captures directement a OSAIT pour un traitement automatise (fix AI + PR GitHub).
-
 ## Commandes
 
 ```bash

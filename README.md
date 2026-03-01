@@ -159,7 +159,6 @@ Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines
 
 ## Related Projects
 
-- [OSAIT](https://osait.fr) — AI-powered ticketing SaaS that fixes bugs automatically (by the same team)
 - [BrowserTools MCP](https://github.com/AgentDeskAI/browser-tools-mcp) — Live browser monitoring for AI IDEs
 - [Chrome DevTools MCP](https://github.com/ChromeDevTools/chrome-devtools-mcp) — Chrome DevTools exposed via MCP
 
