@@ -54,15 +54,9 @@ PageNab est une extension Chrome (Manifest V3) qui capture le contexte complet d
 
 Injecte dans la page quand l'utilisateur declenche une capture. N'est PAS injecte en permanence (activation on-demand via `chrome.scripting.executeScript`).
 
-**Modules** :
-- `dom.ts` : Clone et nettoie le DOM (retire scripts inline, preserve styles, masque passwords)
-- `console.ts` : Intercepte `console.*` via monkey-patching temporaire + collecte les erreurs existantes via `window.onerror` et `window.onunhandledrejection`
-- `network.ts` : Utilise `PerformanceObserver` (type `resource`) + `performance.getEntriesByType('resource')` pour les requetes echouees/lentes
-- `cookies.ts` : Lit `document.cookie` (non-httpOnly uniquement), sanitise les valeurs sensibles
-- `storage.ts` : Lit `localStorage` et `sessionStorage`, sanitise les cles sensibles, tronque les valeurs longues
-- `performance.ts` : Collecte `performance.getEntriesByType('navigation')`, `PerformanceObserver` (LCP, CLS, FID), `performance.memory`
-- `metadata.ts` : Collecte URL, titre, viewport, userAgent, timestamp, langue, colorScheme
-- `area-selector.ts` : Injecte un overlay semi-opaque, gere le click+drag pour dessiner un rectangle, retourne les coordonnees de la zone
+**Fichiers** :
+- `collector.ts` : Fonction self-contained (zero imports) injectee via `executeScript({func})`. Collecte console, network, DOM, cookies, storage, performance et metadata en une seule injection. Le monkey-patching console est temporaire. Network utilise `performance.getEntriesByType('resource')`. DOM est clone et nettoye (scripts retires, passwords masques). Cookies via `document.cookie`. Storage avec sanitization. Performance via Navigation Timing + paint entries + buffered LCP/CLS/FID.
+- `area-selector.ts` : Injecte un overlay semi-opaque, gere le click+drag pour dessiner un rectangle, retourne les coordonnees CSS de la zone
 
 **Contraintes** :
 - Pas d'acces au `chrome.devtools` depuis un content script — utilise les API web standard
@@ -74,7 +68,7 @@ Injecte dans la page quand l'utilisateur declenche une capture. N'est PAS inject
 
 **Responsabilite** : enregistrer les dernieres interactions utilisateur (clics, scrolls, inputs) dans un buffer circulaire.
 
-**Activation** : enregistre via `chrome.scripting.registerContentScripts` UNIQUEMENT quand le tracking interactions est actif (preset Full ou Custom avec interactions coche). Desenregistre quand desactive.
+**Activation** : le script est toujours injecte par Plasmo (bundled depuis `src/contents/interactions.ts`). Il verifie un flag `pagenab_interactions_enabled` dans `chrome.storage.local` avant de tracker. Le flag est mis a jour par le background quand le preset change.
 
 **Comportement** :
 - Buffer circulaire de 50 evenements max
@@ -84,15 +78,18 @@ Injecte dans la page quand l'utilisateur declenche une capture. N'est PAS inject
 - Pas de capture de frappes clavier individuelles
 - Quand la capture est declenchee, le background demande le buffer au content script via messaging
 
-**Impact quand desactive** : zero — pas de script persistant, pas d'evenement ecoute.
+**Impact quand desactive** : minimal — le script est injecte mais les handlers verifient le flag et ignorent les evenements si desactive.
 
 ### 3. Background Service Worker
 
 **Responsabilite** : orchestration de la capture, clipboard multi-format, sauvegarde screenshot, gestion historique.
 
 **Modules** :
-- `capture.ts` : Coordonne la collecte (screenshot via `chrome.tabs.captureVisibleTab`, donnees du content script via messaging, crop area via canvas offscreen). Determine les modules a appeler selon le preset.
-- `clipboard.ts` : Ecrit dans le clipboard en multi-format (`text/plain` + `image/png`) via offscreen document + `navigator.clipboard.write`
+- `capture.ts` : Coordonne la collecte (screenshot via `chrome.tabs.captureVisibleTab`, donnees du content script via `executeScript`, crop area via OffscreenCanvas). Determine les modules a appeler selon le preset.
+- `clipboard.ts` : Ecrit dans le clipboard en multi-format (`text/plain` + `image/png`) via injection dans la page active (`chrome.scripting.executeScript` + `navigator.clipboard.write`)
+- `crop.ts` : Crop du screenshot area via OffscreenCanvas (calcul du ratio image/viewport pour HiDPI)
+- `area.ts` : Declenchement de la capture area (injection overlay + appel capture)
+- `interactions.ts` : Toggle du flag storage pour activer/desactiver le tracking + fetch du buffer interactions
 - `history.ts` : Sauvegarde/lecture/suppression des captures dans `chrome.storage.local`, gestion de la limite max
 
 **Flow de capture — Full Page** :
@@ -106,7 +103,7 @@ Injecte dans la page quand l'utilisateur declenche une capture. N'est PAS inject
 7. Background capture le screenshot via chrome.tabs.captureVisibleTab
 8. Background assemble le CaptureBundle complet
 9. Background sauvegarde le screenshot via chrome.downloads (persistance)
-10. Background copie dans le clipboard via offscreen document :
+10. Background copie dans le clipboard via injection dans la page active (chrome.scripting.executeScript + navigator.clipboard.write) :
     - text/plain : donnees textuelles formatees selon le preset
     - image/png : screenshot pleine page
 11. Background sauvegarde la capture dans l'historique (chrome.storage.local)
@@ -163,7 +160,7 @@ C'est le meme comportement que coller un screenshot natif, avec le texte en bonu
 - **Capture** (defaut) : switches screenshot mode (full page/area) + preset (Light/Full/Custom), checkboxes donnees (si Custom), bouton "Nab this page", derniere capture, hint raccourci
 - **History** : liste scrollable des captures passees, actions copy/details/delete, compteur stockage
 - **History Detail** : vue detaillee d'une capture (screenshot, console, network, DOM, cookies, storage, interactions, perf), bouton re-copy
-- **Settings** : notifications on/off, raccourci clavier (enregistreur de touches), max captures historique
+- **Settings** : notifications on/off, raccourci clavier (affichage + lien chrome://extensions/shortcuts), max captures historique
 
 **Navigation** : header avec icone retour (←) sur les sous-pages, icones history (🕓) et settings (⚙️) sur l'ecran principal.
 
@@ -206,20 +203,22 @@ Les screenshots sont copies dans le clipboard (pour le collage immediat) ET sauv
 
 L'image s'attache directement quand on colle, comme un screenshot natif (Cmd+Shift+4). Le texte fournit le contexte structure en plus. L'utilisateur n'a rien a faire de special — il colle et l'AI recoit tout.
 
-### Raccourci clavier custom
+### Raccourci clavier
 
-Gere par un systeme custom (pas `chrome.commands`) pour permettre la personnalisation dans les settings :
-- L'enregistreur de touches capture la combinaison dans Settings
-- Le raccourci est stocke dans `chrome.storage.local`
-- Un content script leger ecoute les evenements clavier
-- Avantage : modification sans passer par `chrome://extensions/shortcuts`
+Gere via `chrome.commands` (API native Manifest V3) :
+- Raccourci par defaut : `Ctrl+Shift+N` (Mac: `Cmd+Shift+N`)
+- Declare dans le manifest via `commands` dans package.json
+- Le background ecoute `chrome.commands.onCommand` et declenche la capture
+- L'utilisateur peut modifier le raccourci via `chrome://extensions/shortcuts`
+- Settings affiche le raccourci actuel (lecture seule)
 
 ### Pourquoi un content script persistant pour les interactions ?
 
 Les interactions utilisateur (clics, scrolls, inputs) doivent etre enregistrees AVANT que la capture soit declenchee. Le content script on-demand ne peut pas capturer des evenements passes. Solution :
-- Un content script persistant enregistre via `chrome.scripting.registerContentScripts`
-- Active uniquement quand le preset le requiert (Full ou Custom+interactions)
-- Desactive = zero impact, pas de script injecte
+- Un content script persistant bundle par Plasmo (depuis `src/contents/interactions.ts` avec `PlasmoCSConfig`)
+- Le script est toujours injecte mais verifie un flag `pagenab_interactions_enabled` dans `chrome.storage.local` avant de tracker
+- Active/desactive via le flag storage (mis a jour par le background quand le preset change)
+- Desactive = impact minimal (script injecte mais handlers ignorent les evenements)
 - Buffer circulaire de 50 events, pas de fuite memoire
 
 ## Securite
@@ -242,12 +241,13 @@ Les interactions utilisateur (clics, scrolls, inputs) doivent etre enregistrees 
     "clipboardWrite",
     "storage",
     "downloads",
-    "notifications"
+    "notifications",
+    "scripting"
   ]
 }
 ```
 
-Pas de `<all_urls>`, pas de `tabs`, pas de `history`, pas de `cookies` (on utilise `document.cookie` depuis le content script), pas de `nativeMessaging`.
+Note : `<all_urls>` est utilise dans `content_scripts` (pour le content script interactions persistant) mais PAS dans `permissions` (pas d'acces arbitraire aux pages). Pas de `tabs`, pas de `history`, pas de `cookies` (on utilise `document.cookie` depuis le content script), pas de `nativeMessaging`.
 
 ## Scope V2 (futur)
 

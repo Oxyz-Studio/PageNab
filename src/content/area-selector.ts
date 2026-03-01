@@ -10,6 +10,12 @@ export interface AreaRect {
 
 export function startAreaSelection(): Promise<AreaRect | null> {
   return new Promise((resolve) => {
+    // Force crosshair cursor on entire document so no page element can override it
+    const cursorStyle = document.createElement("style")
+    cursorStyle.id = "pagenab-cursor-override"
+    cursorStyle.textContent = "* { cursor: crosshair !important; }"
+    document.head.appendChild(cursorStyle)
+
     // Create overlay
     const overlay = document.createElement("div")
     overlay.id = "pagenab-area-overlay"
@@ -68,6 +74,7 @@ export function startAreaSelection(): Promise<AreaRect | null> {
       overlay.remove()
       selection.remove()
       instructions.remove()
+      cursorStyle.remove()
       document.removeEventListener("keydown", onKeyDown)
     }
 

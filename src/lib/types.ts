@@ -79,6 +79,7 @@ export interface NetworkData {
   summary: { total: number; failed: number; slow: number }
   failed: NetworkRequest[]
   slow: NetworkRequest[]
+  all?: NetworkRequest[]
 }
 
 // === Cookies ===

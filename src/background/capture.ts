@@ -12,7 +12,7 @@ import type {
 } from "../lib/types"
 import { collectPageData } from "../content/collector"
 import type { CollectorOptions, CollectorResult } from "../content/collector"
-import { fetchInteractions } from "./interactions"
+import { enableInteractionsTracking, fetchInteractions } from "./interactions"
 import { writeToClipboard } from "./clipboard"
 import { cropScreenshot } from "./crop"
 import { saveCapture } from "./history"
@@ -68,7 +68,7 @@ export async function capturePage(
       storage: wants("storage"),
       performance: wants("performance"),
       consoleFilter: preset === "light" ? "errors-warnings" : "all",
-      networkFilter: preset === "light" ? "failed" : "failed-slow",
+      networkFilter: preset === "light" ? "failed" : "all",
     }
 
     let collected: CollectorResult | null = null
@@ -85,7 +85,12 @@ export async function capturePage(
     }
 
     // Fetch interactions from persistent content script (if enabled)
-    const interactions: InteractionsData | null = wants("interactions")
+    // Auto-enable tracking for future captures when preset requires interactions
+    const wantsInteractions = wants("interactions")
+    if (wantsInteractions) {
+      await enableInteractionsTracking()
+    }
+    const interactions: InteractionsData | null = wantsInteractions
       ? await fetchInteractions(tab.id)
       : null
 

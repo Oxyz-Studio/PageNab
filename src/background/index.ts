@@ -7,6 +7,17 @@ import type { PopupMessage, Settings } from "../lib/types"
 
 const SETTINGS_KEY = "pagenab_settings"
 
+// Auto-enable interactions tracking on startup if preset requires it
+chrome.storage.local.get(SETTINGS_KEY).then((result) => {
+  const settings = (result[SETTINGS_KEY] as Settings) ?? DEFAULT_SETTINGS
+  const needsTracking =
+    settings.preset === "full" ||
+    (settings.preset === "custom" && settings.customOptions?.interactions)
+  if (needsTracking) {
+    enableInteractionsTracking()
+  }
+})
+
 // Keyboard shortcut handler
 chrome.commands.onCommand.addListener(async (command) => {
   if (command === "capture-page") {

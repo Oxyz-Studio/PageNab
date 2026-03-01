@@ -13,6 +13,10 @@ export async function startAreaCapture(
       return { success: false, error: "No active tab found" }
     }
 
+    // Small delay so the popup has time to close before the overlay appears.
+    // Without this, the popup may still be visible and steal focus.
+    await new Promise((r) => setTimeout(r, 150))
+
     // Inject the area selector into the page
     const injectionResults = await chrome.scripting.executeScript({
       target: { tabId: tab.id },

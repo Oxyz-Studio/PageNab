@@ -10,7 +10,7 @@ export interface CollectorOptions {
   storage: boolean
   performance: boolean
   consoleFilter: "errors-warnings" | "all"
-  networkFilter: "failed" | "failed-slow"
+  networkFilter: "failed" | "failed-slow" | "all"
 }
 
 export interface CollectorResult {
@@ -245,6 +245,7 @@ export function collectPageData(options: CollectorOptions): CollectorResult {
 
     const failed: NetEntry[] = []
     const slow: NetEntry[] = []
+    const all: NetEntry[] = []
     const total = entries.length
 
     for (const entry of entries) {
@@ -258,32 +259,28 @@ export function collectPageData(options: CollectorOptions): CollectorResult {
       const isFailed = status >= 400
       const isSlow = !isFailed && duration > 3000 && status > 0
 
-      if (isFailed && failed.length < 50) {
-        failed.push({
-          url: entry.name,
-          status,
-          statusText: `HTTP ${status}`,
-          type: entry.initiatorType,
-          duration,
-          timestamp: ts,
-          requestHeaders: {},
-          responseHeaders: {},
-          initiator: entry.initiatorType,
-        })
+      const netEntry: NetEntry = {
+        url: entry.name,
+        status,
+        statusText: `HTTP ${status}`,
+        type: entry.initiatorType,
+        duration,
+        timestamp: ts,
+        requestHeaders: {},
+        responseHeaders: {},
+        initiator: entry.initiatorType,
       }
 
-      if (isSlow && options.networkFilter === "failed-slow" && slow.length < 10) {
-        slow.push({
-          url: entry.name,
-          status,
-          statusText: `HTTP ${status}`,
-          type: entry.initiatorType,
-          duration,
-          timestamp: ts,
-          requestHeaders: {},
-          responseHeaders: {},
-          initiator: entry.initiatorType,
-        })
+      if (isFailed && failed.length < 50) {
+        failed.push(netEntry)
+      }
+
+      if (isSlow && (options.networkFilter === "failed-slow" || options.networkFilter === "all") && slow.length < 10) {
+        slow.push(netEntry)
+      }
+
+      if (options.networkFilter === "all" && all.length < 200) {
+        all.push(netEntry)
       }
     }
 
@@ -291,6 +288,7 @@ export function collectPageData(options: CollectorOptions): CollectorResult {
       summary: { total, failed: failed.length, slow: slow.length },
       failed,
       slow,
+      ...(all.length > 0 ? { all } : {}),
     }
   }
 

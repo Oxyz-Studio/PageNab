@@ -86,6 +86,7 @@ Open source: https://github.com/Oxyz-Studio/PageNab
 | `storage` | Store user preferences and capture history locally |
 | `downloads` | Save page screenshots to user's Downloads folder for persistence |
 | `notifications` | Show confirmation after successful capture |
+| `scripting` | Inject content script to collect page data (console, network, DOM, cookies, etc.) |
 
 ### Privacy practices
 

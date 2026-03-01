@@ -70,7 +70,7 @@ describe("generateTextContent", () => {
     })
     const text = generateTextContent(input)
     expect(text).toContain("## Console")
-    expect(text).toContain("No errors or warnings.")
+    expect(text).toContain("No console output.")
   })
 
   it("includes console errors when captured", () => {
@@ -127,6 +127,53 @@ describe("generateTextContent", () => {
     expect(text).toContain("2 warnings")
     expect(text).toContain("**WARN** Deprecation warning: use newMethod instead")
     expect(text).toContain("**WARN** Performance warning: slow render")
+  })
+
+  it("includes console logs and info in full mode", () => {
+    const input = makeBaseInput({
+      metadata: {
+        ...makeBaseInput().metadata,
+        preset: "full",
+        capturedData: ["console"],
+      },
+      console: {
+        summary: { errors: 1, warnings: 1, logs: 2, info: 1 },
+        logs: [
+          {
+            level: "error",
+            message: "Something broke",
+            timestamp: "2026-03-01T14:23:40.100Z",
+          },
+          {
+            level: "warning",
+            message: "Deprecation warning",
+            timestamp: "2026-03-01T14:23:40.200Z",
+          },
+          {
+            level: "log",
+            message: "App initialized",
+            timestamp: "2026-03-01T14:23:40.300Z",
+          },
+          {
+            level: "log",
+            message: "Fetching data...",
+            timestamp: "2026-03-01T14:23:40.400Z",
+          },
+          {
+            level: "info",
+            message: "Version 2.1.0",
+            timestamp: "2026-03-01T14:23:40.500Z",
+          },
+        ],
+      },
+    })
+    const text = generateTextContent(input)
+    expect(text).toContain("1 error, 1 warning, 2 logs, 1 info")
+    expect(text).toContain("**ERROR** Something broke")
+    expect(text).toContain("**WARN** Deprecation warning")
+    expect(text).toContain("**LOG** App initialized")
+    expect(text).toContain("**LOG** Fetching data...")
+    expect(text).toContain("**INFO** Version 2.1.0")
   })
 
   it("shows clean network message when no failures", () => {
@@ -205,6 +252,93 @@ describe("generateTextContent", () => {
     expect(text).toContain("1 slow")
     expect(text).toContain("**SLOW** `/heavy`")
     expect(text).toContain("3200ms")
+  })
+
+  it("shows all network requests in full mode", () => {
+    const input = makeBaseInput({
+      metadata: {
+        ...makeBaseInput().metadata,
+        preset: "full",
+        capturedData: ["network"],
+      },
+      network: {
+        summary: { total: 4, failed: 1, slow: 1 },
+        failed: [
+          {
+            url: "https://api.example.com/users",
+            status: 500,
+            statusText: "Internal Server Error",
+            type: "fetch",
+            duration: 234,
+            timestamp: "2026-03-01T14:23:42.000Z",
+            requestHeaders: {},
+            responseHeaders: {},
+          },
+        ],
+        slow: [
+          {
+            url: "https://api.example.com/heavy",
+            status: 200,
+            statusText: "OK",
+            type: "xhr",
+            duration: 3200,
+            timestamp: "2026-03-01T14:23:42.000Z",
+            requestHeaders: {},
+            responseHeaders: {},
+          },
+        ],
+        all: [
+          {
+            url: "https://api.example.com/users",
+            status: 500,
+            statusText: "Internal Server Error",
+            type: "fetch",
+            duration: 234,
+            timestamp: "2026-03-01T14:23:42.000Z",
+            requestHeaders: {},
+            responseHeaders: {},
+          },
+          {
+            url: "https://cdn.example.com/app.js",
+            status: 200,
+            statusText: "OK",
+            type: "script",
+            duration: 45,
+            timestamp: "2026-03-01T14:23:42.000Z",
+            requestHeaders: {},
+            responseHeaders: {},
+          },
+          {
+            url: "https://api.example.com/heavy",
+            status: 200,
+            statusText: "OK",
+            type: "xhr",
+            duration: 3200,
+            timestamp: "2026-03-01T14:23:42.000Z",
+            requestHeaders: {},
+            responseHeaders: {},
+          },
+          {
+            url: "https://cdn.example.com/style.css",
+            status: 200,
+            statusText: "OK",
+            type: "link",
+            duration: 30,
+            timestamp: "2026-03-01T14:23:42.000Z",
+            requestHeaders: {},
+            responseHeaders: {},
+          },
+        ],
+      },
+    })
+    const text = generateTextContent(input)
+    expect(text).toContain("4 requests, 1 failed, 1 slow")
+    expect(text).toContain("**FAIL** `/users` → 500")
+    expect(text).toContain("`/app.js` → 200 (45ms, script)")
+    expect(text).toContain("**SLOW** `/heavy` → 200 (3200ms, xhr)")
+    expect(text).toContain("`/style.css` → 200 (30ms, link)")
+    // Should NOT show "No failed requests."
+    expect(text).not.toContain("No failed requests.")
   })
 
   it("includes cookies when captured", () => {

@@ -116,9 +116,10 @@ export function generateTextContent(input: FormatInput): string {
     if (s.errors > 0) parts.push(`${s.errors} error${s.errors !== 1 ? "s" : ""}`)
     if (s.warnings > 0) parts.push(`${s.warnings} warning${s.warnings !== 1 ? "s" : ""}`)
     if (s.logs > 0) parts.push(`${s.logs} log${s.logs !== 1 ? "s" : ""}`)
+    if (s.info > 0) parts.push(`${s.info} info`)
 
     if (parts.length === 0) {
-      lines.push("No errors or warnings.")
+      lines.push("No console output.")
     } else {
       lines.push(parts.join(", "))
       lines.push("")
@@ -139,6 +140,16 @@ export function generateTextContent(input: FormatInput): string {
       for (const warn of warnings) {
         lines.push(`- **WARN** ${truncate(warn.message, 200)}`)
       }
+
+      const logEntries = input.console.logs.filter((l) => l.level === "log").slice(0, 10)
+      for (const log of logEntries) {
+        lines.push(`- **LOG** ${truncate(log.message, 200)}`)
+      }
+
+      const infoEntries = input.console.logs.filter((l) => l.level === "info").slice(0, 5)
+      for (const info of infoEntries) {
+        lines.push(`- **INFO** ${truncate(info.message, 200)}`)
+      }
     }
   }
 
@@ -149,27 +160,49 @@ export function generateTextContent(input: FormatInput): string {
     lines.push("")
 
     const s = input.network.summary
-    const hasFailed = s.failed > 0
-    const hasSlow = s.slow > 0
 
-    if (!hasFailed && !hasSlow) {
-      lines.push("No failed requests.")
-    } else {
-      const parts: string[] = []
-      if (s.total > 0) parts.push(`${s.total} requests`)
-      if (hasFailed) parts.push(`${s.failed} failed`)
-      if (hasSlow) parts.push(`${s.slow} slow`)
+    if (input.network.all && input.network.all.length > 0) {
+      // Full mode: show all requests
+      const parts: string[] = [`${s.total} requests`]
+      if (s.failed > 0) parts.push(`${s.failed} failed`)
+      if (s.slow > 0) parts.push(`${s.slow} slow`)
       lines.push(parts.join(", "))
       lines.push("")
 
-      for (const req of input.network.failed.slice(0, 5)) {
+      for (const req of input.network.all.slice(0, 50)) {
         const path = extractPath(req.url)
-        lines.push(`- **FAIL** \`${path}\` → ${req.status} ${req.statusText} (${req.type})`)
+        const isFailed = req.status >= 400
+        const isSlow = !isFailed && req.duration > 3000
+        const prefix = isFailed ? "**FAIL** " : isSlow ? "**SLOW** " : ""
+        lines.push(`- ${prefix}\`${path}\` → ${req.status} (${req.duration}ms, ${req.type})`)
       }
+      if (input.network.all.length > 50) {
+        lines.push(`- ... and ${input.network.all.length - 50} more`)
+      }
+    } else {
+      // Light mode: only failed/slow
+      const hasFailed = s.failed > 0
+      const hasSlow = s.slow > 0
 
-      for (const req of input.network.slow.slice(0, 3)) {
-        const path = extractPath(req.url)
-        lines.push(`- **SLOW** \`${path}\` → ${req.status} (${req.duration}ms, ${req.type})`)
+      if (!hasFailed && !hasSlow) {
+        lines.push("No failed requests.")
+      } else {
+        const parts: string[] = []
+        if (s.total > 0) parts.push(`${s.total} requests`)
+        if (hasFailed) parts.push(`${s.failed} failed`)
+        if (hasSlow) parts.push(`${s.slow} slow`)
+        lines.push(parts.join(", "))
+        lines.push("")
+
+        for (const req of input.network.failed.slice(0, 5)) {
+          const path = extractPath(req.url)
+          lines.push(`- **FAIL** \`${path}\` → ${req.status} ${req.statusText} (${req.type})`)
+        }
+
+        for (const req of input.network.slow.slice(0, 3)) {
+          const path = extractPath(req.url)
+          lines.push(`- **SLOW** \`${path}\` → ${req.status} (${req.duration}ms, ${req.type})`)
+        }
       }
     }
   }
@@ -195,10 +228,10 @@ export function generateTextContent(input: FormatInput): string {
     const ss = input.storage.sessionStorage
     lines.push(`${ls.summary.keys} localStorage, ${ss.summary.keys} sessionStorage`)
     lines.push("")
-    for (const entry of ls.entries.slice(0, 3)) {
+    for (const entry of ls.entries) {
       lines.push(`- [local] ${entry.key}: \`${truncate(entry.value, 100)}\``)
     }
-    for (const entry of ss.entries.slice(0, 3)) {
+    for (const entry of ss.entries) {
       lines.push(`- [session] ${entry.key}: \`${truncate(entry.value, 100)}\``)
     }
   }

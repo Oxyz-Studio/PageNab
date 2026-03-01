@@ -104,7 +104,6 @@ Requetes reseau problematiques. Light = failed only. Full/Custom = failed + slow
   "failed": [
     {
       "url": "https://api.example.com/users",
-      "method": "GET",
       "status": 500,
       "statusText": "Internal Server Error",
       "type": "fetch",
@@ -231,9 +230,9 @@ Derniers evenements utilisateur avant la capture. Buffer circulaire de 50 events
 - Pas de capture de frappes clavier individuelles, uniquement l'evenement "input"
 
 **Architecture** :
-- Necessite un content script persistant (enregistre via `chrome.scripting.registerContentScripts`)
-- Le script est enregistre uniquement quand interactions est active (Full preset ou Custom avec interactions coche)
-- Desactive = pas de script persistant, zero impact sur les performances
+- Content script persistant bundle par Plasmo (depuis `src/contents/interactions.ts` avec `PlasmoCSConfig`)
+- Le script est toujours injecte mais verifie un flag `pagenab_interactions_enabled` dans `chrome.storage.local`
+- Desactive = impact minimal (script injecte mais handlers ignorent les evenements)
 
 ### performance
 

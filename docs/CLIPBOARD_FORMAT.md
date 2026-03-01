@@ -59,9 +59,9 @@ Console: 3 errors, 1 warning
   [WARN]  Each child in a list should have a unique "key" prop.
 
 Network: 2 failed
-  [FAIL] GET /api/users → 500 Internal Server Error
+  [FAIL] /api/users → 500 Internal Server Error (fetch)
          Response: {"error":"Internal server error"}
-  [FAIL] GET /api/stats → 403 Forbidden
+  [FAIL] /api/stats → 403 Forbidden (fetch)
 
 Screenshot: ~/Downloads/pagenab-app.example.com-2026-03-01_14-23-45.png
 ```
@@ -85,10 +85,10 @@ Console: 3 errors, 1 warning, 12 logs
   [WARN]  Each child in a list should have a unique "key" prop.
 
 Network: 45 total, 2 failed, 1 slow
-  [FAIL] GET /api/users → 500 Internal Server Error
+  [FAIL] /api/users → 500 Internal Server Error (fetch)
          Response: {"error":"Internal server error"}
-  [FAIL] GET /api/stats → 403 Forbidden
-  [SLOW] POST /api/analytics → 200 (5200ms)
+  [FAIL] /api/stats → 403 Forbidden (fetch)
+  [SLOW] /api/analytics → 200 (5200ms) (fetch)
 
 Cookies: 12 cookies
   session_id: *** | theme: dark | lang: fr | _ga: GA1.2***
@@ -103,7 +103,7 @@ Performance:
   LCP: 1200ms | CLS: 0.05 | FID: 45ms
   Memory: 45 MB / 4096 MB
 
-Interactions: 12 events (last 50)
+Interactions: 12 events (showing last 5)
   [click] button.submit-btn "Submit" (14:29:58)
   [scroll] down 450px (14:29:55)
   [input] input#search *** (14:29:50)
@@ -169,12 +169,12 @@ function generateTextContent(bundle):
     summary = formatNetworkSummary(bundle.network, preset)
     lines.push(`Network: ${summary}`)
     for req in bundle.network.failed.slice(0, 5):
-      lines.push(`  [FAIL] ${req.method} ${req.url} → ${req.status} ${req.statusText}`)
+      lines.push(`  [FAIL] ${extractPath(req.url)} → ${req.status} ${req.statusText} (${req.type})`)
       if req.responseBody:
         lines.push(`         Response: ${truncate(req.responseBody, 200)}`)
     if preset !== 'light':
       for req in bundle.network.slow.slice(0, 3):
-        lines.push(`  [SLOW] ${req.method} ${req.url} → ${req.status} (${req.duration}ms)`)
+        lines.push(`  [SLOW] ${extractPath(req.url)} → ${req.status} (${req.duration}ms) (${req.type})`)
 
   // Cookies (si capture)
   if "cookies" in capturedData:
@@ -203,7 +203,7 @@ function generateTextContent(bundle):
 
   // Interactions (si capture)
   if "interactions" in capturedData:
-    lines.push(`Interactions: ${bundle.interactions.summary.total} events (last 50)`)
+    lines.push(`Interactions: ${bundle.interactions.summary.total} events (showing last ${Math.min(bundle.interactions.events.length, 5)})`)
     for event in bundle.interactions.events.slice(0, 5):
       lines.push(`  [${event.type}] ${formatInteraction(event)}`)
 
@@ -229,7 +229,7 @@ function generateTextContent(bundle):
 1. **URL** : complete (avec query params), pas de troncation
 2. **Preset** : toujours indique dans le header
 3. **Erreurs console** : message + fichier:ligne + stack trace (max 3 lignes de stack)
-4. **Network** : methode + path + status + body de reponse (tronque a 200 chars)
+4. **Network** : path + status + type (initiatorType) + body de reponse (tronque a 200 chars). Note : `PerformanceResourceTiming` n'expose pas la methode HTTP.
 5. **Cookies** : nom + valeur (tronquee/masquee), une ligne resumee
 6. **Storage** : top 3 entries par type, valeurs tronquees a 100 chars
 7. **Performance** : metriques sur 2-3 lignes compactes

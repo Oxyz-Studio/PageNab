@@ -8,11 +8,11 @@ Guide d'implementation sequentiel pour PageNab V1.
 
 - [ ] Init projet Plasmo (`npm create plasmo`)
 - [ ] Configurer TypeScript strict
-- [ ] Installer Tailwind CSS 4
+- [ ] Installer Tailwind CSS 3.4
 - [ ] Configurer ESLint + Prettier
 - [ ] Configurer Vitest
 - [ ] Creer la structure de dossiers (`src/background/`, `src/content/`, `src/popup/`, `src/lib/`)
-- [ ] Manifest V3 avec permissions (`activeTab`, `clipboardWrite`, `storage`, `downloads`, `notifications`)
+- [ ] Manifest V3 avec permissions (`activeTab`, `clipboardWrite`, `storage`, `downloads`, `notifications`, `scripting`)
 - [ ] Verifier que `npm run dev` charge l'extension dans Chrome
 
 **Livrable** : extension Chrome qui s'affiche dans la barre d'outils avec une icone et un popup vide.
@@ -70,8 +70,8 @@ Guide d'implementation sequentiel pour PageNab V1.
 - [ ] `interactions.ts` : content script persistant avec buffer circulaire de 50 events
 - [ ] Ecoute : `click`, `scroll`, `input`, `change`
 - [ ] Sanitization : valeurs d'inputs TOUJOURS masquees, pas de frappes clavier individuelles
-- [ ] Enregistrement via `chrome.scripting.registerContentScripts` (uniquement quand active)
-- [ ] Desenregistrement quand le preset ne requiert plus les interactions
+- [ ] Bundling via Plasmo (`src/contents/interactions.ts` avec `PlasmoCSConfig`)
+- [ ] Flag `pagenab_interactions_enabled` dans `chrome.storage.local` pour activer/desactiver le tracking
 - [ ] Le background demande le buffer au content script via messaging lors de la capture
 - [ ] Tests unitaires pour le buffer circulaire et la sanitization
 
@@ -81,7 +81,7 @@ Guide d'implementation sequentiel pour PageNab V1.
 
 **Objectif** : copier les donnees dans le clipboard en multi-format (text + image) selon le preset.
 
-- [ ] Offscreen document pour acceder a `navigator.clipboard.write`
+- [ ] Ecriture clipboard via injection dans la page active (`chrome.scripting.executeScript` + `navigator.clipboard.write`)
 - [ ] Ecriture multi-format : `ClipboardItem` avec `text/plain` + `image/png`
 - [ ] Generateur de texte Light (metadata + console errors/warnings + network failed)
 - [ ] Generateur de texte Full (metadata + console all + network all + cookies + storage + perf + interactions + DOM)
@@ -133,9 +133,9 @@ Guide d'implementation sequentiel pour PageNab V1.
 
 **Objectif** : raccourci clavier configurable + interface utilisateur polie.
 
-- [ ] Enregistreur de touches dans Settings : champ cliquable, capture la combinaison
-- [ ] Stockage du raccourci dans `chrome.storage.local`
-- [ ] Detection du raccourci : content script leger qui ecoute les evenements clavier
+- [ ] Raccourci clavier via `chrome.commands` (declare dans le manifest)
+- [ ] Listener `chrome.commands.onCommand` dans le background service worker
+- [ ] Settings : affichage du raccourci (lecture seule) + lien vers `chrome://extensions/shortcuts`
 - [ ] Le raccourci respecte le dernier mode (full page = capture directe, area = overlay) et le dernier preset
 - [ ] Notification Chrome apres capture (domaine + nombre erreurs)
 - [ ] Valeur par defaut : Ctrl+Shift+N (Cmd+Shift+N sur macOS)
@@ -143,7 +143,7 @@ Guide d'implementation sequentiel pour PageNab V1.
 - [ ] Ecran principal : preset selector + switches + bouton + derniere capture + hint raccourci
 - [ ] Header : logo PageNab + icones history et settings
 - [ ] Etats : idle, idle avec derniere capture, idle Custom (avec checkboxes), capturing, success, success area (2 miniatures), error
-- [ ] Page Settings : notifications on/off, raccourci clavier (enregistreur), max captures (input)
+- [ ] Page Settings : notifications on/off, raccourci clavier (affichage + lien chrome://extensions/shortcuts), max captures (input)
 - [ ] Animations et transitions fluides
 - [ ] Footer settings : version + licence + lien GitHub
 

@@ -145,7 +145,7 @@ interface Settings {
   screenshotMode: 'fullpage' | 'area'    // Dernier mode selectionne
   notifications: boolean                  // Notification apres capture
   maxCaptures: number                     // Limite historique (defaut 20)
-  shortcut: string                        // Raccourci custom (ex: "Ctrl+Shift+N")
+  shortcut: string                        // Raccourci affiche (lecture seule, gere via chrome.commands)
 }
 ```
 

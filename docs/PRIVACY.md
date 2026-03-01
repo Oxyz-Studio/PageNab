@@ -76,9 +76,10 @@ PageNab can capture the following data types depending on the selected preset (L
 | `storage` | To save your preferences and capture history locally |
 | `downloads` | To save screenshots to your Downloads folder for persistence |
 | `notifications` | To confirm when a capture is complete |
+| `scripting` | To inject the content script that collects page data (console, network, DOM, etc.) |
 
 PageNab does **not** request:
-- `<all_urls>` (no access to all websites)
+- `<all_urls>` in permissions (the content script for interaction tracking uses `<all_urls>` in `content_scripts`, but this does not grant arbitrary access — it only runs the passive interaction tracker)
 - `tabs` (no access to your tab list)
 - `history` (no access to your browsing history)
 - `cookies` (no access to httpOnly cookies via Chrome API)

@@ -275,9 +275,9 @@ Chaque carte affiche le preset utilise + les badges des donnees capturees.
 │  ▸ ⚠ Each child should have…     │
 │                                  │
 │  Network  2 failed · 1 slow      │
-│  ▸ GET /api/users → 500          │
-│  ▸ GET /api/stats → 403          │
-│  ▸ 🐌 POST /api/analytics 5.2s   │
+│  ▸ /api/users → 500 (fetch)     │
+│  ▸ /api/stats → 403 (fetch)     │
+│  ▸ 🐌 /api/analytics 5.2s (fetch)│
 │                                  │
 │  DOM  ✓ captured (125 KB)        │
 │                                  │
@@ -318,10 +318,9 @@ Les ▸ sont expandables (stack traces, response bodies, valeurs completes).
 │  Notifications           [ ON ]  │
 │                                  │
 │  Keyboard shortcut               │
-│  ┌────────────────────────────┐  │
-│  │  Ctrl + Shift + N          │  │
-│  └────────────────────────────┘  │
-│  Click to record new shortcut    │
+│  Ctrl+Shift+N                    │
+│  Change via chrome://extensions  │
+│  /shortcuts                      │
 │                                  │
 │  History                         │
 │  Max captures             [ 20 ] │
@@ -331,12 +330,12 @@ Les ▸ sont expandables (stack traces, response bodies, valeurs completes).
 └──────────────────────────────────┘
 ```
 
-L'enregistreur de raccourci : cliquer → "Press your shortcut..." → l'utilisateur appuie → affiche la combinaison → sauvegarde.
+Le raccourci est gere via `chrome.commands` (API native MV3). L'utilisateur peut le modifier via `chrome://extensions/shortcuts`. Settings affiche le raccourci actuel en lecture seule.
 
 ## Flow raccourci clavier (sans popup)
 
 ```
-Ctrl+Shift+N (ou raccourci custom)
+Ctrl+Shift+N (ou raccourci modifie via chrome://extensions/shortcuts)
      │
      ├─ Mode "Full page" → capture directe avec le preset actif
      │       │

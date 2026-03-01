@@ -31,16 +31,14 @@ function IndexPopup() {
 
   const handleCapture = async () => {
     if (mode === "area") {
-      // Area mode: close popup, background will inject area selector
-      try {
-        await chrome.runtime.sendMessage({
-          type: "START_AREA_CAPTURE",
-          preset,
-          customOptions: preset === "custom" ? customOptions : undefined,
-        })
-      } catch {
-        // Popup closes before response — that's expected
-      }
+      // Area mode: close popup FIRST so it doesn't steal focus from the page,
+      // then background injects the area selector overlay.
+      // Use fire-and-forget sendMessage — popup will close before response arrives.
+      chrome.runtime.sendMessage({
+        type: "START_AREA_CAPTURE",
+        preset,
+        customOptions: preset === "custom" ? customOptions : undefined,
+      })
       window.close()
       return
     }
@@ -161,6 +159,22 @@ function IdleView({
   onCustomOptionsChange: (o: CustomOptions) => void
   onCapture: () => void
 }) {
+  const handlePresetChange = (v: string) => {
+    const newPreset = v as Preset
+    onPresetChange(newPreset)
+    // Auto-enable/disable interactions tracking based on preset
+    const enabled = newPreset === "full" || (newPreset === "custom" && customOptions.interactions)
+    chrome.runtime.sendMessage({ type: "UPDATE_INTERACTIONS_TRACKING", enabled })
+  }
+
+  const handleCustomOptionChange = (key: keyof CustomOptions, checked: boolean) => {
+    const updated = { ...customOptions, [key]: checked }
+    onCustomOptionsChange(updated)
+    if (key === "interactions") {
+      chrome.runtime.sendMessage({ type: "UPDATE_INTERACTIONS_TRACKING", enabled: checked })
+    }
+  }
+
   return (
     <>
       {/* Screenshot mode */}
@@ -183,7 +197,7 @@ function IdleView({
           { value: "custom", label: "Custom" },
         ]}
         value={preset}
-        onChange={(v) => onPresetChange(v as Preset)}
+        onChange={handlePresetChange}
       />
 
       {/* Preset hint */}
@@ -212,9 +226,7 @@ function IdleView({
               <input
                 type="checkbox"
                 checked={customOptions[key]}
-                onChange={(e) =>
-                  onCustomOptionsChange({ ...customOptions, [key]: e.target.checked })
-                }
+                onChange={(e) => handleCustomOptionChange(key, e.target.checked)}
                 className="h-3.5 w-3.5 rounded border-neutral-300 text-neutral-900 focus:ring-neutral-500"
               />
               {label}

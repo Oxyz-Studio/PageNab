@@ -78,9 +78,12 @@ Quand l'utilisateur colle :
 ```
 src/
 ├── background/          → Service worker (orchestration, clipboard, downloads)
-│   ├── index.ts         → Message handler principal
+│   ├── index.ts         → Message handler principal + listener chrome.commands
 │   ├── capture.ts       → Orchestration de la capture (full page + area)
-│   ├── clipboard.ts     → Copie multi-format (text/plain + image/png)
+│   ├── clipboard.ts     → Copie multi-format via injection page (text/plain + image/png)
+│   ├── crop.ts          → Crop screenshot area (OffscreenCanvas)
+│   ├── area.ts          → Declenchement capture area (injection overlay)
+│   ├── interactions.ts  → Toggle tracking via storage flag + fetch buffer
 │   └── history.ts       → Gestion historique captures (chrome.storage.local)
 ├── content/             → Content scripts injectes on-demand (via executeScript)
 │   ├── collector.ts     → Collecte donnees page (self-contained, zero imports)
@@ -89,8 +92,7 @@ src/
 │   └── interactions.ts  → Tracking interactions utilisateur (via storage flag)
 ├── popup/               → UI popup extension
 │   ├── index.tsx        → Popup React component (ecran principal)
-│   ├── History.tsx      → Liste des captures precedentes
-│   ├── HistoryDetail.tsx → Detail d'une capture
+│   ├── History.tsx      → Liste des captures precedentes + vue detail
 │   └── Settings.tsx     → Page settings
 ├── lib/                 → Utilitaires partages
 │   ├── types.ts         → Types TypeScript (CaptureBundle, Preset, etc.)
@@ -109,7 +111,7 @@ Plasmo 0.90.5 (Manifest V3) | React 18.3.1 | TypeScript | Tailwind CSS 3.4 | Vit
 - **TypeScript strict** : pas de `any`, utiliser `unknown`
 - **Fichiers** : composants `PascalCase.tsx`, utilitaires `camelCase.ts`
 - **Messages Chrome** : typage strict avec discriminated unions
-- **Permissions** : minimum necessaire (`activeTab`, `clipboardWrite`, `storage`, `downloads`, `notifications`)
+- **Permissions** : minimum necessaire (`activeTab`, `clipboardWrite`, `storage`, `downloads`, `notifications`, `scripting`)
 - **Pas de remote code** : tout est bundle (Manifest V3)
 - **Sanitization** : toujours nettoyer les headers sensibles, valeurs de cookies, valeurs d'inputs utilisateur
 - **Taille** : chaque capture dans l'historique doit rester raisonnable (~100-250KB avec thumbnail)
@@ -119,7 +121,7 @@ Plasmo 0.90.5 (Manifest V3) | React 18.3.1 | TypeScript | Tailwind CSS 3.4 | Vit
 1. Toujours sanitizer les donnees sensibles avant ecriture (headers auth, cookies, tokens, valeurs d'inputs)
 2. Jamais de requete reseau depuis l'extension (tout est local)
 3. Le clipboard contient toujours text/plain + image/png (multi-format)
-4. Permissions Chrome minimales — `activeTab` pas `<all_urls>`
+4. Permissions Chrome minimales — `activeTab` pas `<all_urls>` (note : le content script interactions utilise `<all_urls>` dans content_scripts, pas dans permissions)
 5. Pas de tracking, pas d'analytics, pas de telemetrie
 6. Le DOM snapshot doit etre nettoye (scripts inline retires, styles inline preserves)
 7. L'extension doit fonctionner hors-ligne (aucune dependance reseau)
@@ -127,7 +129,7 @@ Plasmo 0.90.5 (Manifest V3) | React 18.3.1 | TypeScript | Tailwind CSS 3.4 | Vit
 9. Zero friction a l'installation : installer le plugin = pret a capturer
 10. En mode area, toujours capturer le full page en plus de la zone selectionnee
 11. L'historique respecte la limite max configurable (defaut 20 captures)
-12. Le content script persistent (interactions) n'est enregistre QUE quand le tracking est actif (Full preset ou Custom avec interactions coche)
+12. Le content script persistent (interactions) est toujours injecte (Plasmo bundling) mais ne track QUE quand le flag `pagenab_interactions_enabled` est actif dans chrome.storage.local
 
 ## Presets de capture
 
@@ -190,7 +192,7 @@ performance           → { loadTime, LCP, CLS, FID, memory, ... } (Full/Custom 
 - Clipboard : multi-format text/plain + image/png (l'image s'attache directement au collage)
 - Screenshot : aussi sauvegarde via chrome.downloads pour persistance
 - UI : popup avec presets, switches, history, settings
-- Raccourci clavier : capture directe, respecte le dernier mode, configurable dans settings
+- Raccourci clavier : `chrome.commands` (Ctrl+Shift+N / Cmd+Shift+N), modifiable via chrome://extensions/shortcuts
 - Historique : captures stockees dans chrome.storage.local, copy/details/delete
 - Tests : unitaires Vitest
 - Zero friction : installer = pret a capturer
