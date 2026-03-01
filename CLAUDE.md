@@ -30,9 +30,8 @@ npm run test             # Tests unitaires (Vitest)
 Extension Chrome (Plasmo, Manifest V3)
 ├── Background Service Worker    → Orchestration capture, clipboard multi-format, download screenshot
 ├── Content Script (on-demand)   → Injection page, extraction DOM/console/network/cookies/storage/perf, overlay area selection
-├── Content Script (persistent)  → Tracking interactions utilisateur (uniquement si active)
-├── Popup                        → UI (capture, presets, history, settings)
-└── Offscreen Document           → Clipboard write (navigator.clipboard.write avec text + image)
+├── Content Script (persistent)  → Tracking interactions utilisateur (via storage flag, dans src/contents/)
+└── Popup                        → UI (capture, presets, history, settings)
 ```
 
 ### Data Flow
@@ -83,17 +82,11 @@ src/
 │   ├── capture.ts       → Orchestration de la capture (full page + area)
 │   ├── clipboard.ts     → Copie multi-format (text/plain + image/png)
 │   └── history.ts       → Gestion historique captures (chrome.storage.local)
-├── content/             → Content scripts (injectes dans la page)
-│   ├── index.ts         → Point d'entree content script (on-demand)
-│   ├── dom.ts           → Extraction DOM snapshot
-│   ├── console.ts       → Capture console logs
-│   ├── network.ts       → Capture network errors
-│   ├── cookies.ts       → Capture cookies (document.cookie, sanitise)
-│   ├── storage.ts       → Capture localStorage/sessionStorage
-│   ├── performance.ts   → Capture metriques performance (CWV, timings)
-│   ├── interactions.ts  → Tracking interactions utilisateur (content script persistant)
-│   ├── metadata.ts      → Collection metadata page
+├── content/             → Content scripts injectes on-demand (via executeScript)
+│   ├── collector.ts     → Collecte donnees page (self-contained, zero imports)
 │   └── area-selector.ts → Overlay selection zone rectangulaire
+├── contents/            → Content scripts persistants (bundles par Plasmo)
+│   └── interactions.ts  → Tracking interactions utilisateur (via storage flag)
 ├── popup/               → UI popup extension
 │   ├── index.tsx        → Popup React component (ecran principal)
 │   ├── History.tsx      → Liste des captures precedentes
@@ -109,7 +102,7 @@ src/
 
 ## Stack
 
-Plasmo (Manifest V3) | React 19 | TypeScript | Tailwind CSS 4 | Vitest
+Plasmo 0.90.5 (Manifest V3) | React 18.3.1 | TypeScript | Tailwind CSS 3.4 | Vitest
 
 ## Conventions
 
@@ -225,8 +218,8 @@ Consulter `docs/` pour les specs completes :
 
 ## Etat du projet
 
-**Phase actuelle : Documentation terminee, code non commence.**
+**Phase actuelle : Implementation Steps 1-9 termines.**
 
-Le repository ne contient que de la documentation.
+Tests : 45+ tests passent (config, sanitize, format). Build Plasmo reussi.
 
-**Prochaine etape** : commencer l'implementation (Etape 1 : Scaffolding). Design neutre avec Tailwind CSS.
+**Prochaine etape** : Step 10 (Publication) — icons, Chrome Web Store prep.
