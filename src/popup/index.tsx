@@ -54,6 +54,19 @@ function IndexPopup() {
         customOptions: preset === "custom" ? customOptions : undefined,
       })
       if (response.success) {
+        // Write clipboard from popup — has user activation from click + focus
+        try {
+          const imgResp = await fetch(response.data.screenshot)
+          const imageBlob = await imgResp.blob()
+          await navigator.clipboard.write([
+            new ClipboardItem({
+              "text/plain": new Blob([response.data.clipboardText], { type: "text/plain" }),
+              "image/png": imageBlob,
+            }),
+          ])
+        } catch {
+          // Clipboard write failed — data still saved to downloads + history
+        }
         setState({ status: "success", result: response.data })
       } else {
         setState({ status: "error", message: response.error })
@@ -173,9 +186,17 @@ function IdleView({
         onChange={(v) => onPresetChange(v as Preset)}
       />
 
+      {/* Preset hint */}
+      <p className="mt-1.5 text-[11px] leading-relaxed text-neutral-400">
+        {preset === "light" && "Errors, warnings, failed requests"}
+        {preset === "full" &&
+          "Console, network, DOM, cookies, storage, interactions, perf"}
+        {preset === "custom" && "Screenshot + metadata always included"}
+      </p>
+
       {/* Custom options */}
       {preset === "custom" && (
-        <div className="mt-2 grid grid-cols-3 gap-x-3 gap-y-1.5">
+        <div className="mt-1.5 grid grid-cols-3 gap-x-3 gap-y-1.5">
           {(
             [
               ["console", "Console"],

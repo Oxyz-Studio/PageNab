@@ -29,7 +29,7 @@ chrome.runtime.onMessage.addListener(
     const msg = message as PopupMessage
     switch (msg.type) {
       case "CAPTURE_PAGE":
-        capturePage(msg.preset, msg.mode, msg.customOptions).then(sendResponse)
+        capturePage(msg.preset, msg.mode, msg.customOptions, undefined, true).then(sendResponse)
         return true
 
       case "START_AREA_CAPTURE":

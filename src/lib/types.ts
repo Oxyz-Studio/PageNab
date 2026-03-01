@@ -219,6 +219,7 @@ export type CaptureResponse =
 
 export interface CaptureResult {
   screenshot: string
+  clipboardText: string
   domain: string
   url: string
   title: string

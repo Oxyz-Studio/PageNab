@@ -123,13 +123,18 @@ export function startAreaSelection(): Promise<AreaRect | null> {
         return
       }
 
-      // Return CSS coordinates — crop.ts handles DPR scaling
-      resolve({
-        x: Math.round(r.left),
-        y: Math.round(r.top),
-        width: Math.round(r.width),
-        height: Math.round(r.height),
-      })
+      // Wait for browser to repaint after overlay removal.
+      // cleanup() removes DOM elements synchronously, but the visual
+      // repaint is async — without this delay, captureVisibleTab
+      // captures the overlay still visible on screen.
+      setTimeout(() => {
+        resolve({
+          x: Math.round(r.left),
+          y: Math.round(r.top),
+          width: Math.round(r.width),
+          height: Math.round(r.height),
+        })
+      }, 100)
     })
   })
 }

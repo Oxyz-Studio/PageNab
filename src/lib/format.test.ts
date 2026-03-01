@@ -28,19 +28,49 @@ function makeBaseInput(overrides: Partial<FormatInput> = {}): FormatInput {
 }
 
 describe("generateTextContent", () => {
-  it("generates header with URL and metadata", () => {
+  it("generates markdown header with URL and metadata", () => {
     const text = generateTextContent(makeBaseInput())
-    expect(text).toContain("[PageNab] https://app.example.com/dashboard?tab=overview")
-    expect(text).toContain("Viewport: 1920x1080")
-    expect(text).toContain("Lang: fr-FR")
-    expect(text).toContain("Preset: Light")
+    expect(text).toContain("# Web page capture")
+    expect(text).toContain("**URL:** https://app.example.com/dashboard?tab=overview")
+    expect(text).toContain("**Title:** Dashboard - My App")
+    expect(text).toContain("**Time:** 2026-03-01")
+    expect(text).toContain("**Viewport:** 1920x1080")
+    expect(text).toContain("**Language:** fr-FR")
+    // No branding or preset
+    expect(text).not.toContain("[PageNab]")
+    expect(text).not.toContain("Preset:")
   })
 
-  it("includes screenshot path", () => {
+  it("omits title when empty", () => {
+    const input = makeBaseInput({
+      metadata: { ...makeBaseInput().metadata, title: "" },
+    })
+    const text = generateTextContent(input)
+    expect(text).not.toContain("**Title:**")
+  })
+
+  it("includes screenshot path in markdown", () => {
     const text = generateTextContent(makeBaseInput())
+    expect(text).toContain("## Screenshots")
     expect(text).toContain(
-      "Screenshot: ~/Downloads/pagenab-app.example.com-2026-03-01_14-23-45.png",
+      "`~/Downloads/pagenab-app.example.com-2026-03-01_14-23-45.png`",
     )
+  })
+
+  it("shows clean console message when no issues", () => {
+    const input = makeBaseInput({
+      metadata: {
+        ...makeBaseInput().metadata,
+        capturedData: ["console"],
+      },
+      console: {
+        summary: { errors: 0, warnings: 0, logs: 0, info: 0 },
+        logs: [],
+      },
+    })
+    const text = generateTextContent(input)
+    expect(text).toContain("## Console")
+    expect(text).toContain("No errors or warnings.")
   })
 
   it("includes console errors when captured", () => {
@@ -63,9 +93,57 @@ describe("generateTextContent", () => {
       },
     })
     const text = generateTextContent(input)
-    expect(text).toContain("Console: 1 error")
-    expect(text).toContain("[ERROR] TypeError: Cannot read property 'map' of undefined")
-    expect(text).toContain("main.js:47")
+    expect(text).toContain("## Console")
+    expect(text).toContain("1 error")
+    expect(text).toContain(
+      "**ERROR** TypeError: Cannot read property 'map' of undefined",
+    )
+    expect(text).toContain("`main.js:47`")
+  })
+
+  it("includes console warnings", () => {
+    const input = makeBaseInput({
+      metadata: {
+        ...makeBaseInput().metadata,
+        capturedData: ["console"],
+      },
+      console: {
+        summary: { errors: 0, warnings: 2, logs: 0, info: 0 },
+        logs: [
+          {
+            level: "warning",
+            message: "Deprecation warning: use newMethod instead",
+            timestamp: "2026-03-01T14:23:40.100Z",
+          },
+          {
+            level: "warning",
+            message: "Performance warning: slow render",
+            timestamp: "2026-03-01T14:23:41.100Z",
+          },
+        ],
+      },
+    })
+    const text = generateTextContent(input)
+    expect(text).toContain("2 warnings")
+    expect(text).toContain("**WARN** Deprecation warning: use newMethod instead")
+    expect(text).toContain("**WARN** Performance warning: slow render")
+  })
+
+  it("shows clean network message when no failures", () => {
+    const input = makeBaseInput({
+      metadata: {
+        ...makeBaseInput().metadata,
+        capturedData: ["network"],
+      },
+      network: {
+        summary: { total: 30, failed: 0, slow: 0 },
+        failed: [],
+        slow: [],
+      },
+    })
+    const text = generateTextContent(input)
+    expect(text).toContain("## Network")
+    expect(text).toContain("No failed requests.")
   })
 
   it("includes network failed requests when captured", () => {
@@ -92,10 +170,41 @@ describe("generateTextContent", () => {
       },
     })
     const text = generateTextContent(input)
-    expect(text).toContain("Network: 1 failed")
-    expect(text).toContain("[FAIL] /users")
+    expect(text).toContain("## Network")
+    expect(text).toContain("45 requests, 1 failed")
+    expect(text).toContain("**FAIL** `/users`")
     expect(text).toContain("500 Internal Server Error")
     expect(text).toContain("(fetch)")
+  })
+
+  it("includes slow requests when present", () => {
+    const input = makeBaseInput({
+      metadata: {
+        ...makeBaseInput().metadata,
+        preset: "full",
+        capturedData: ["network"],
+      },
+      network: {
+        summary: { total: 20, failed: 0, slow: 1 },
+        failed: [],
+        slow: [
+          {
+            url: "https://api.example.com/heavy",
+            status: 200,
+            statusText: "OK",
+            type: "xhr",
+            duration: 3200,
+            timestamp: "2026-03-01T14:23:42.000Z",
+            requestHeaders: {},
+            responseHeaders: {},
+          },
+        ],
+      },
+    })
+    const text = generateTextContent(input)
+    expect(text).toContain("1 slow")
+    expect(text).toContain("**SLOW** `/heavy`")
+    expect(text).toContain("3200ms")
   })
 
   it("includes cookies when captured", () => {
@@ -114,8 +223,10 @@ describe("generateTextContent", () => {
       },
     })
     const text = generateTextContent(input)
-    expect(text).toContain("Cookies: 2 cookies")
-    expect(text).toContain("theme: dark")
+    expect(text).toContain("## Cookies")
+    expect(text).toContain("2 cookies")
+    expect(text).toContain("- theme: `dark`")
+    expect(text).toContain("- session_id: `***`")
   })
 
   it("includes storage when captured", () => {
@@ -140,10 +251,11 @@ describe("generateTextContent", () => {
       },
     })
     const text = generateTextContent(input)
-    expect(text).toContain("Storage: 2 localStorage keys, 1 sessionStorage keys")
-    expect(text).toContain('[local] prefs: {"dark":true}')
-    expect(text).toContain("[local] auth_token: ***")
-    expect(text).toContain("[session] draft: hello")
+    expect(text).toContain("## Storage")
+    expect(text).toContain("2 localStorage, 1 sessionStorage")
+    expect(text).toContain('[local] prefs: `{"dark":true}`')
+    expect(text).toContain("[local] auth_token: `***`")
+    expect(text).toContain("[session] draft: `hello`")
   })
 
   it("includes performance when captured", () => {
@@ -166,7 +278,7 @@ describe("generateTextContent", () => {
       },
     })
     const text = generateTextContent(input)
-    expect(text).toContain("Performance:")
+    expect(text).toContain("## Performance")
     expect(text).toContain("Load: 2100ms")
     expect(text).toContain("LCP: 1200ms")
     expect(text).toContain("CLS: 0.05")
@@ -208,13 +320,14 @@ describe("generateTextContent", () => {
       },
     })
     const text = generateTextContent(input)
-    expect(text).toContain("Interactions: 3 events (showing last 3)")
+    expect(text).toContain("## Interactions")
+    expect(text).toContain("3 events (last 3)")
     expect(text).toContain('[click] button.submit "Submit"')
     expect(text).toContain("[scroll] down 450px")
     expect(text).toContain("[input] input#search ***")
   })
 
-  it("includes DOM at the end when captured", () => {
+  it("includes DOM at the end in html code fence", () => {
     const input = makeBaseInput({
       metadata: {
         ...makeBaseInput().metadata,
@@ -224,23 +337,24 @@ describe("generateTextContent", () => {
       dom: '<!DOCTYPE html>\n<html lang="fr"><body><p>Hello</p></body></html>',
     })
     const text = generateTextContent(input)
-    expect(text).toContain("--- DOM Snapshot ---")
+    expect(text).toContain("## DOM")
+    expect(text).toContain("```html")
     expect(text).toContain("<p>Hello</p>")
-    // DOM should be last
-    const domIndex = text.indexOf("--- DOM Snapshot ---")
-    const screenshotIndex = text.indexOf("Screenshot:")
+    // DOM should be after Screenshots
+    const domIndex = text.indexOf("## DOM")
+    const screenshotIndex = text.indexOf("## Screenshots")
     expect(domIndex).toBeGreaterThan(screenshotIndex)
   })
 
   it("omits sections not in capturedData", () => {
     const text = generateTextContent(makeBaseInput())
-    expect(text).not.toContain("Console:")
-    expect(text).not.toContain("Network:")
-    expect(text).not.toContain("Cookies:")
-    expect(text).not.toContain("Storage:")
-    expect(text).not.toContain("Performance:")
-    expect(text).not.toContain("Interactions:")
-    expect(text).not.toContain("--- DOM Snapshot ---")
+    expect(text).not.toContain("## Console")
+    expect(text).not.toContain("## Network")
+    expect(text).not.toContain("## Cookies")
+    expect(text).not.toContain("## Storage")
+    expect(text).not.toContain("## Performance")
+    expect(text).not.toContain("## Interactions")
+    expect(text).not.toContain("## DOM")
   })
 
   it("shows area screenshot paths when in area mode", () => {
@@ -252,7 +366,7 @@ describe("generateTextContent", () => {
       areaScreenshotPath: "pagenab-app.example.com-2026-03-01_14-23-45-area.png",
     })
     const text = generateTextContent(input)
-    expect(text).toContain("Screenshot (full page):")
-    expect(text).toContain("Screenshot (area):")
+    expect(text).toContain("Full page:")
+    expect(text).toContain("Area:")
   })
 })

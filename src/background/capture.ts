@@ -32,6 +32,8 @@ export async function capturePage(
   mode: CaptureMode,
   customOptions?: CustomOptions,
   areaRect?: { x: number; y: number; width: number; height: number },
+  /** When true, skip clipboard write (caller handles it — e.g. popup has user activation) */
+  skipClipboard?: boolean,
 ): Promise<CaptureResponse> {
   const startTime = Date.now()
 
@@ -196,11 +198,19 @@ export async function capturePage(
       )
     }
 
+    const parallelTasks: Promise<unknown>[] = [...downloadPromises]
+
+    // Only write clipboard from background when not handled by caller (e.g. keyboard shortcut)
+    if (!skipClipboard) {
+      parallelTasks.push(
+        writeToClipboard(textContent, clipboardImage).catch(() => {
+          // Clipboard write failure is non-critical
+        }),
+      )
+    }
+
     await Promise.all([
-      ...downloadPromises,
-      writeToClipboard(textContent, clipboardImage).catch(() => {
-        // Clipboard write failure is non-critical
-      }),
+      ...parallelTasks,
       saveCapture(
         screenshotDataUrl,
         metadata,
@@ -234,6 +244,7 @@ export async function capturePage(
 
     const result: CaptureResult = {
       screenshot: areaScreenshotDataUrl ?? screenshotDataUrl,
+      clipboardText: textContent,
       domain,
       url: tab.url,
       title: tab.title ?? "",
