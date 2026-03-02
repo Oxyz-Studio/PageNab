@@ -1,14 +1,16 @@
-import { CAPTURE_VERSION, generateScreenshotFilename, parseDomain, parsePath } from "../lib/config"
+import { CAPTURE_VERSION, DEFAULT_SETTINGS, generateScreenshotFilename, parseDomain, parsePath } from "../lib/config"
 import type {
   CaptureMetadata,
   CaptureMode,
   CaptureResponse,
   CaptureResult,
   CaptureStats,
+  ClipboardMode,
   ConsoleData,
   CustomOptions,
   InteractionsData,
   Preset,
+  Settings,
 } from "../lib/types"
 import { collectPageData } from "../content/collector"
 import type { CollectorOptions, CollectorResult } from "../content/collector"
@@ -34,6 +36,8 @@ export async function capturePage(
   areaRect?: { x: number; y: number; width: number; height: number },
   /** When true, skip clipboard write (caller handles it — e.g. popup has user activation) */
   skipClipboard?: boolean,
+  /** When true, skip downloads (caller handles them — e.g. area capture defers after openPopup) */
+  skipDownloads?: boolean,
 ): Promise<CaptureResponse> {
   const startTime = Date.now()
 
@@ -190,25 +194,31 @@ export async function capturePage(
     const clipboardImage = areaScreenshotDataUrl ?? screenshotDataUrl
 
     // Run downloads, clipboard, history, and notification in parallel
-    const downloadPromises: Promise<unknown>[] = [
-      chrome.downloads.download({ url: screenshotDataUrl, filename, saveAs: false }),
-    ]
-    if (areaScreenshotDataUrl && areaFilename) {
-      downloadPromises.push(
-        chrome.downloads.download({
-          url: areaScreenshotDataUrl,
-          filename: areaFilename,
-          saveAs: false,
-        }),
-      )
-    }
+    const parallelTasks: Promise<unknown>[] = []
 
-    const parallelTasks: Promise<unknown>[] = [...downloadPromises]
+    if (!skipDownloads) {
+      parallelTasks.push(
+        chrome.downloads.download({ url: screenshotDataUrl, filename, saveAs: false }),
+      )
+      if (areaScreenshotDataUrl && areaFilename) {
+        parallelTasks.push(
+          chrome.downloads.download({
+            url: areaScreenshotDataUrl,
+            filename: areaFilename,
+            saveAs: false,
+          }),
+        )
+      }
+    }
 
     // Only write clipboard from background when not handled by caller (e.g. keyboard shortcut)
     if (!skipClipboard) {
+      const settingsResult = await chrome.storage.local.get("pagenab_settings")
+      const clipboardMode: ClipboardMode =
+        (settingsResult.pagenab_settings as Settings | undefined)?.clipboardMode ??
+        DEFAULT_SETTINGS.clipboardMode
       parallelTasks.push(
-        writeToClipboard(textContent, clipboardImage).catch(() => {
+        writeToClipboard(textContent, clipboardImage, clipboardMode).catch(() => {
           // Clipboard write failure is non-critical
         }),
       )
@@ -235,11 +245,21 @@ export async function capturePage(
         try {
           const manifest = chrome.runtime.getManifest()
           const iconUrl = manifest.icons?.["128"] ?? manifest.icons?.["48"] ?? ""
+          const notifSettingsResult = await chrome.storage.local.get("pagenab_settings")
+          const notifClipMode =
+            (notifSettingsResult.pagenab_settings as Settings | undefined)?.clipboardMode ??
+            DEFAULT_SETTINGS.clipboardMode
+          const clipMsg =
+            notifClipMode === "text"
+              ? "Text copied"
+              : notifClipMode === "image"
+                ? "Screenshot copied"
+                : "Copied"
           await chrome.notifications.create(`pagenab-${Date.now()}`, {
             type: "basic",
             iconUrl,
             title: "PageNab",
-            message: `Captured! Paste in your AI assistant.\n${domain}`,
+            message: `Captured! ${clipMsg}. Paste in your AI assistant.\n${domain}`,
           })
         } catch {
           // Notification failure is non-critical
@@ -249,6 +269,7 @@ export async function capturePage(
 
     const result: CaptureResult = {
       screenshot: areaScreenshotDataUrl ?? screenshotDataUrl,
+      fullScreenshot: areaScreenshotDataUrl ? screenshotDataUrl : undefined,
       clipboardText: textContent,
       domain,
       url: tab.url,

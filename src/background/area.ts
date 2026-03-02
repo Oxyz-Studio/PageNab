@@ -30,7 +30,50 @@ export async function startAreaCapture(
     }
 
     // Proceed with full capture, passing the area rect
-    return capturePage(preset, "area", customOptions, rect)
+    // skipDownloads=true so the download bubble doesn't block openPopup
+    const response = await capturePage(preset, "area", customOptions, rect, false, true)
+
+    // Store result so the popup can show success view when reopened
+    if (response.success) {
+      try {
+        await chrome.storage.session.set({
+          pagenab_area_result: { data: response.data, timestamp: Date.now() },
+        })
+      } catch {
+        // session storage not available — notification is the fallback
+      }
+      // Try to reopen popup to show success view (Chrome 127+)
+      try {
+        await (chrome.action as unknown as { openPopup?: () => Promise<void> }).openPopup?.()
+      } catch {
+        // openPopup not available — user can click the icon manually
+      }
+      // Now trigger downloads — the popup is already open so the download bubble
+      // won't interfere with it
+      try {
+        const dlPromises: Promise<unknown>[] = [
+          chrome.downloads.download({
+            url: response.data.fullScreenshot ?? response.data.screenshot,
+            filename: response.data.screenshotPath,
+            saveAs: false,
+          }),
+        ]
+        if (response.data.areaScreenshotPath) {
+          dlPromises.push(
+            chrome.downloads.download({
+              url: response.data.screenshot,
+              filename: response.data.areaScreenshotPath,
+              saveAs: false,
+            }),
+          )
+        }
+        await Promise.all(dlPromises)
+      } catch {
+        // Download failure is non-critical
+      }
+    }
+
+    return response
   } catch (err) {
     const message = err instanceof Error ? err.message : "Area capture failed"
     return { success: false, error: message }
