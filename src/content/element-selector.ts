@@ -24,7 +24,23 @@ export function startElementSelection(): Promise<ElementSelectionResult | null> 
     const highlightClass = "pagenab-highlight"
     const style = document.createElement("style")
     style.id = "pagenab-element-style"
-    style.textContent = `.${highlightClass} { outline: 2px solid #3b82f6 !important; outline-offset: 2px !important; }`
+    style.textContent = `
+@keyframes pagenab-glow {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(99,102,241,0.6), 0 0 8px 0 rgba(99,102,241,0.15) !important; }
+  50% { box-shadow: 0 0 0 2px rgba(99,102,241,0.6), 0 0 16px 2px rgba(99,102,241,0.25) !important; }
+}
+@keyframes pagenab-selected {
+  0% { outline-color: #6366f1; box-shadow: 0 0 0 2px rgba(99,102,241,0.6), 0 0 12px 2px rgba(99,102,241,0.3); }
+  50% { outline-color: #818cf8; box-shadow: 0 0 0 3px rgba(99,102,241,0.8), 0 0 24px 4px rgba(99,102,241,0.35); }
+  100% { outline-color: transparent; box-shadow: 0 0 0 0 transparent, 0 0 0 0 transparent; }
+}
+@keyframes pagenab-banner-enter {
+  from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+.${highlightClass} { outline: 2px solid #6366f1 !important; outline-offset: 2px !important; box-shadow: 0 0 0 2px rgba(99,102,241,0.6), 0 0 8px 0 rgba(99,102,241,0.15) !important; animation: pagenab-glow 2s ease-in-out infinite !important; will-change: box-shadow !important; }
+.pagenab-selected { outline: 2px solid #818cf8 !important; outline-offset: 2px !important; animation: pagenab-selected 0.35s cubic-bezier(0.16,1,0.3,1) forwards !important; will-change: box-shadow, outline-color !important; }
+`
     document.head.appendChild(style)
 
     // --- Banner ---
@@ -39,9 +55,13 @@ export function startElementSelection(): Promise<ElementSelectionResult | null> 
       color: "#fff",
       fontSize: "13px",
       fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
-      borderRadius: "8px",
+      borderRadius: "10px",
       zIndex: "2147483647",
       pointerEvents: "none",
+      backdropFilter: "blur(8px)",
+      WebkitBackdropFilter: "blur(8px)",
+      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+      animation: "pagenab-banner-enter 0.3s cubic-bezier(0.16,1,0.3,1) both",
     })
     banner.textContent = "Click an element \u00B7 Esc to cancel"
     document.body.appendChild(banner)
@@ -274,17 +294,23 @@ export function startElementSelection(): Promise<ElementSelectionResult | null> 
       const rect = target.getBoundingClientRect()
       if (rect.width < 2 || rect.height < 2) return
 
-      // Remove highlight before collecting data
+      // Stop hover interactions immediately
+      document.removeEventListener("mouseover", onMouseOver, true)
+      document.removeEventListener("mouseout", onMouseOut, true)
+
+      // Switch from glow to selected flash animation
       target.classList.remove(highlightClass)
-      cleanup()
+      target.classList.add("pagenab-selected")
 
       // Scroll element into view for screenshot
       target.scrollIntoView({ block: "center", behavior: "instant" as ScrollBehavior })
 
-      // Small delay for repaint after scroll + cleanup
+      // Wait for selected animation (350ms) + buffer before cleanup + resolve
       setTimeout(() => {
+        target.classList.remove("pagenab-selected")
+        cleanup()
         resolve(collectElementData(target))
-      }, 100)
+      }, 400)
     }
 
     function onKeyDown(e: KeyboardEvent) {

@@ -251,7 +251,6 @@ Note : `<all_urls>` est utilise dans `content_scripts` (pour le content script i
 
 ## Scope V2 (futur)
 
-- **Element Selector** : selection visuelle basee sur le DOM (highlight au survol), capture sous-arbre + screenshot crop
 - **Native Messaging Host** : ecriture dans `~/.pagenab/` avec rotation, symlink `latest`
 - **MCP Server** : package `pagenab-mcp` pour exposer les captures comme outils MCP
 - **Locators Playwright** : generation automatique de locators

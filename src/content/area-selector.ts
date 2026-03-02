@@ -44,6 +44,17 @@ export function startAreaSelection(): Promise<AreaRect | null> {
       pointerEvents: "none",
     })
 
+    // Banner animation style
+    const bannerStyle = document.createElement("style")
+    bannerStyle.id = "pagenab-area-banner-style"
+    bannerStyle.textContent = `
+@keyframes pagenab-banner-enter {
+  from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+`
+    document.head.appendChild(bannerStyle)
+
     // Instructions bar
     const instructions = document.createElement("div")
     Object.assign(instructions.style, {
@@ -52,13 +63,17 @@ export function startAreaSelection(): Promise<AreaRect | null> {
       left: "50%",
       transform: "translateX(-50%)",
       padding: "8px 16px",
-      backgroundColor: "rgba(0, 0, 0, 0.8)",
+      backgroundColor: "rgba(0, 0, 0, 0.85)",
       color: "#fff",
       fontSize: "13px",
       fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
-      borderRadius: "8px",
+      borderRadius: "10px",
       zIndex: "2147483647",
       pointerEvents: "none",
+      backdropFilter: "blur(8px)",
+      WebkitBackdropFilter: "blur(8px)",
+      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+      animation: "pagenab-banner-enter 0.3s cubic-bezier(0.16,1,0.3,1) both",
     })
     instructions.textContent = "Draw a rectangle \u00B7 Esc to cancel"
 
@@ -75,6 +90,7 @@ export function startAreaSelection(): Promise<AreaRect | null> {
       selection.remove()
       instructions.remove()
       cursorStyle.remove()
+      bannerStyle.remove()
       document.removeEventListener("keydown", onKeyDown)
     }
 

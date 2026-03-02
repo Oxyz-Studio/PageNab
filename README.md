@@ -78,7 +78,7 @@ When you paste, the AI gets both the image and the text — full context in one 
 
 | Preset | What's captured | Typical size |
 |--------|----------------|--------------|
-| **Light** (default) | Screenshot + metadata + console errors/warnings + failed network + interactions | ~200-500 tokens + image |
+| **Light** (default) | Screenshot + metadata + console errors/warnings + failed network | ~200-500 tokens + image |
 | **Full** | Everything: screenshot, console (all), network, DOM, cookies, storage, interactions, performance | ~1.5K-150K tokens + image |
 | **Custom** | You choose via checkboxes (console & network on by default) | Varies |
 
@@ -86,7 +86,7 @@ Screenshot and metadata are **always** captured regardless of preset.
 
 ### Light Preset Example
 
-The default preset. Captures what matters most for quick debugging — errors, failed requests, and recent interactions.
+The default preset. Captures what matters most for quick debugging — errors and failed requests.
 
 <details>
 <summary>📋 Clipboard text output (click to expand)</summary>
@@ -116,14 +116,6 @@ The default preset. Captures what matters most for quick debugging — errors, f
 
 - **FAIL** (14:23:43) `/api/users` → 500 Internal Server Error (fetch)
 - **FAIL** (14:23:44) `/api/stats` → 403 Forbidden (fetch)
-
-## Interactions
-
-3 events
-
-- [click] button.btn-refresh "Refresh" (14:23:41)
-- [scroll] down 340px (14:23:38)
-- [click] a.nav-link "Dashboard" (14:23:35)
 
 ## Screenshots
 
@@ -290,6 +282,9 @@ Then load the unpacked extension from `build/chrome-mv3-dev` in `chrome://extens
 - Screenshots are saved to your Downloads folder — you own them.
 - Capture history is stored in local extension storage (chrome.storage.local).
 - Sensitive data (Authorization headers, cookie values, password inputs, tokens) is automatically sanitized before capture.
+
+> **Why does Chrome show "This extension may read and change site information"?**
+> PageNab uses two lightweight content scripts that run on all pages to capture console logs and user interactions *before* you click capture. Without them, any errors or events that happened before the capture would be lost. These scripts are passive — they only buffer data locally and never modify page content or send anything over the network. The "run in the background" part refers to the service worker that orchestrates captures.
 
 See the full [Privacy Policy](docs/PRIVACY.md).
 

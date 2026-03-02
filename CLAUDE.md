@@ -146,11 +146,11 @@ Plasmo 0.90.5 (Manifest V3) | React 18.3.1 | TypeScript | Tailwind CSS 3.4 | Vit
 
 ### Light (defaut)
 
-Capture legere : screenshot + metadata + console errors/warnings + network failed + interactions.
+Capture legere : screenshot + metadata + console errors/warnings + network failed.
 
 Le clipboard contient :
 - **image/png** : le screenshot
-- **text/plain** : metadata + console (errors + warnings) + network (failed only) + interactions + chemin screenshots
+- **text/plain** : metadata + console (errors + warnings) + network (failed only) + chemin screenshots
 
 ~200-500 tokens de texte + image attachee. Ideal pour la majorite des cas.
 
@@ -222,12 +222,8 @@ performance           → { loadTime, LCP, CLS, FID, memory, ... } (Full/Custom 
 
 Consulter `docs/` pour les specs completes :
 - `ARCHITECTURE.md` : architecture detaillee, composants, decisions techniques
-- `CAPTURE_FORMAT.md` : specification complete du format de capture (presets, donnees, sanitization)
-- `CLIPBOARD_FORMAT.md` : specification du format clipboard (texte + image)
-- `WIREFRAMES.md` : wireframes textuels de tous les ecrans du popup
+- `CAPTURE_FORMAT.md` : specification complete du format de capture (presets, donnees, sanitization, format clipboard)
 - `STORAGE.md` : gestion du stockage (chrome.storage.local + chrome.downloads)
-- `IMPLEMENTATION_STEPS.md` : guide d'implementation sequentiel (10 etapes)
-- `MCP_SERVER.md` : specification du serveur MCP (V2)
 - `CHROME_STORE.md` : guide de publication Chrome Web Store
 - `PRIVACY.md` : politique de confidentialite, donnees collectees
 

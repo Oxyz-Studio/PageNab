@@ -53,7 +53,7 @@ const stateVariants = {
 // ─── Preset metadata ─────────────────────────────────────────────────────────
 
 const PRESET_HINT: Record<string, string> = {
-  light: "Errors, warnings, failed requests, interactions",
+  light: "Errors, warnings, failed requests",
   full: "Console, network, DOM, cookies, storage, interactions, perf",
   custom: "Choose which data to capture",
 }
@@ -152,29 +152,38 @@ function IndexPopup() {
 
     setState({ status: "capturing" })
     try {
-      const response: CaptureResponse = await chrome.runtime.sendMessage({
-        type: "CAPTURE_PAGE",
-        preset,
-        mode,
-        customOptions: preset === "custom" ? customOptions : undefined,
-      })
+      const response = (await Promise.race([
+        chrome.runtime.sendMessage({
+          type: "CAPTURE_PAGE",
+          preset,
+          mode,
+          customOptions: preset === "custom" ? customOptions : undefined,
+        }),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("Capture timed out")), 30_000),
+        ),
+      ])) as CaptureResponse
       if (response.success) {
-        try {
-          const items: Record<string, Blob> = {}
-          if (clipboardMode === "text" || clipboardMode === "both") {
-            items["text/plain"] = new Blob([response.data.clipboardText], {
-              type: "text/plain",
-            })
-          }
-          if (clipboardMode === "image" || clipboardMode === "both") {
-            const imgResp = await fetch(response.data.screenshot)
-            items["image/png"] = await imgResp.blob()
-          }
-          await navigator.clipboard.write([new ClipboardItem(items)])
-        } catch {
-          // Clipboard write failed — data still saved to downloads + history
-        }
         setState({ status: "success", result: response.data })
+
+        // Clipboard write fire-and-forget — SuccessView has manual Copy buttons as fallback
+        ;(async () => {
+          try {
+            const items: Record<string, Blob> = {}
+            if (clipboardMode === "text" || clipboardMode === "both") {
+              items["text/plain"] = new Blob([response.data.clipboardText], {
+                type: "text/plain",
+              })
+            }
+            if (clipboardMode === "image" || clipboardMode === "both") {
+              const imgResp = await fetch(response.data.screenshot)
+              items["image/png"] = await imgResp.blob()
+            }
+            await navigator.clipboard.write([new ClipboardItem(items)])
+          } catch {
+            // Clipboard write failed — SuccessView has manual Copy buttons
+          }
+        })()
       } else {
         setState({ status: "error", message: response.error })
       }
@@ -225,13 +234,21 @@ function IndexPopup() {
             exit="exit"
             transition={screenTransition}
           >
-            <Header
-              onHistory={() => setScreen("history")}
-              onSettings={() => setScreen("settings")}
-            />
+            {state.status === "success" ? (
+              <Header
+                showBack
+                onBack={() => setState({ status: "idle" })}
+                title="Captured"
+              />
+            ) : (
+              <Header
+                onHistory={() => setScreen("history")}
+                onSettings={() => setScreen("settings")}
+              />
+            )}
 
             <div className="px-5 pb-6 pt-5">
-              <AnimatePresence mode="wait" initial={false}>
+              <AnimatePresence initial={false}>
                 {state.status === "idle" && (
                   <motion.div
                     key="idle"
@@ -327,11 +344,14 @@ function IdleView({
   onCustomOptionsChange: (o: CustomOptions) => void
   onCapture: () => void
 }) {
+  const [showInteractionsWarning, setShowInteractionsWarning] = useState(false)
+
   const handlePresetChange = (v: string) => {
     const newPreset = v as Preset
     onPresetChange(newPreset)
-    const enabled = newPreset === "light" || newPreset === "full" || (newPreset === "custom" && customOptions.interactions)
+    const enabled = newPreset === "full" || (newPreset === "custom" && customOptions.interactions)
     chrome.runtime.sendMessage({ type: "UPDATE_INTERACTIONS_TRACKING", enabled })
+    setShowInteractionsWarning(enabled)
   }
 
   const handleCustomOptionChange = (key: keyof CustomOptions, checked: boolean) => {
@@ -339,6 +359,7 @@ function IdleView({
     onCustomOptionsChange(updated)
     if (key === "interactions") {
       chrome.runtime.sendMessage({ type: "UPDATE_INTERACTIONS_TRACKING", enabled: checked })
+      if (checked) setShowInteractionsWarning(true)
     }
   }
 
@@ -386,6 +407,22 @@ function IdleView({
         >
           {PRESET_HINT[preset]}
         </motion.p>
+      </AnimatePresence>
+
+      {/* Interactions warning */}
+      <AnimatePresence>
+        {showInteractionsWarning && (
+          <motion.p
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.15, ease: "easeInOut" }}
+            className="overflow-hidden rounded-lg px-3 py-2 text-[11px] leading-relaxed -mt-1"
+            style={{ background: "#fffbeb", color: "#b45309" }}
+          >
+            Interactions tracking just activated. Refresh the page to capture previous interactions.
+          </motion.p>
+        )}
       </AnimatePresence>
 
       {/* Custom options */}

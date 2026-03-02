@@ -15,7 +15,7 @@ Chaque capture PageNab produit un ensemble de donnees structurees. Le contenu de
 | DOM | Non | Oui | Configurable |
 | Cookies | Non | Oui (sanitises) | Configurable |
 | LocalStorage / SessionStorage | Non | Oui | Configurable |
-| User interactions | Oui | Oui | Configurable |
+| User interactions | Non | Oui | Configurable |
 | Performance metrics | Non | Oui | Configurable |
 
 ## Donnees toujours capturees
@@ -303,3 +303,147 @@ Sources :
 | **Light** (full page) | ~440KB | ~105KB | ~2.3MB |
 | **Full** (full page) | ~560KB | ~120KB | ~2.9MB |
 | **Full** (area) | ~610KB | ~130KB | ~3.4MB |
+
+## Format clipboard (text/plain)
+
+### Principe multi-format
+
+Le presse-papier contient deux formats simultanement via `ClipboardItem` :
+
+```javascript
+const clipboardItem = new ClipboardItem({
+  'text/plain': new Blob([textData], { type: 'text/plain' }),
+  'image/png': screenshotBlob
+})
+await navigator.clipboard.write([clipboardItem])
+```
+
+### Comportement au collage
+
+| Outil | Texte | Image |
+|-------|-------|-------|
+| **Claude Code (CLI)** | Colle comme input | S'attache comme image (identique a Cmd+Shift+4) |
+| **Claude.ai (web)** | Apparait dans le message | Apparait dans le message |
+| **ChatGPT (web)** | Apparait dans le message | Apparait dans le message |
+| **Cursor (IDE)** | Colle dans le contexte | S'attache au contexte |
+| **Terminal classique** | Colle comme texte | Ignore |
+| **Editeur texte** | Colle comme texte | Ignore |
+
+### Quelle image dans le clipboard ?
+
+| Mode | Image dans le clipboard |
+|------|------------------------|
+| Full page | Screenshot pleine page |
+| Area | Screenshot de la zone selectionnee (plus pertinent) |
+| Element | Screenshot de l'element selectionne (plus pertinent) |
+
+En mode area/element, le full page screenshot est sauvegarde dans Downloads et son chemin est mentionne dans le texte.
+
+### Exemple text/plain — Preset Light
+
+```
+[PageNab] https://app.example.com/dashboard?tab=overview
+Captured: 2026-03-01 14:23:45 | Viewport: 1920x1080 | Lang: fr-FR | Preset: Light
+
+Console: 3 errors, 1 warning
+  [ERROR] TypeError: Cannot read property 'map' of undefined
+          Dashboard.tsx:47:12
+          Stack: at Dashboard (Dashboard.tsx:47:12)
+                 at renderWithHooks (react-dom.production.min.js:83:1)
+  [ERROR] ReferenceError: data is not defined
+          utils.ts:12
+  [ERROR] 404: /api/users/avatar/123.png
+  [WARN]  Each child in a list should have a unique "key" prop.
+
+Network: 2 failed
+  [FAIL] /api/users → 500 Internal Server Error (fetch)
+         Response: {"error":"Internal server error"}
+  [FAIL] /api/stats → 403 Forbidden (fetch)
+
+Screenshot: ~/Downloads/pagenab-app.example.com-2026-03-01_14-23-45.png
+```
+
+### Exemple text/plain — Preset Full
+
+```
+[PageNab] https://app.example.com/dashboard?tab=overview
+Captured: 2026-03-01 14:23:45 | Viewport: 1920x1080 | Lang: fr-FR | Preset: Full
+
+Console: 3 errors, 1 warning, 12 logs
+  [ERROR] TypeError: Cannot read property 'map' of undefined
+          Dashboard.tsx:47:12
+          Stack: at Dashboard (Dashboard.tsx:47:12)
+                 at renderWithHooks (react-dom.production.min.js:83:1)
+  [ERROR] ReferenceError: data is not defined
+          utils.ts:12
+  [ERROR] 404: /api/users/avatar/123.png
+  [WARN]  Each child in a list should have a unique "key" prop.
+
+Network: 45 total, 2 failed, 1 slow
+  [FAIL] /api/users → 500 Internal Server Error (fetch)
+         Response: {"error":"Internal server error"}
+  [FAIL] /api/stats → 403 Forbidden (fetch)
+  [SLOW] /api/analytics → 200 (5200ms) (fetch)
+
+Cookies: 12 cookies
+  session_id: *** | theme: dark | lang: fr | _ga: GA1.2***
+
+Storage: 5 localStorage keys, 3 sessionStorage keys
+  [local] user_preferences: {"theme":"dark","lang":"fr"...}
+  [local] auth_token: ***
+  [session] form_draft: {"title":"My post",...}
+
+Performance:
+  Load: 2100ms | DOMContentLoaded: 1200ms
+  LCP: 1200ms | CLS: 0.05 | FID: 45ms
+  Memory: 45 MB / 4096 MB
+
+Interactions: 12 events (showing last 5)
+  [click] button.submit-btn "Submit" (14:29:58)
+  [scroll] down 450px (14:29:55)
+  [input] input#search *** (14:29:50)
+
+Screenshot: ~/Downloads/pagenab-app.example.com-2026-03-01_14-23-45.png
+
+--- DOM Snapshot ---
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <title>Dashboard - My App</title>
+  <meta charset="utf-8">
+</head>
+<body>
+  <div class="dashboard-cards" data-testid="dashboard-cards">
+    ...
+  </div>
+</body>
+</html>
+```
+
+### Regles de formatage essentielles
+
+1. **Max 5 erreurs console** et **max 5 requetes failed** affichees
+2. **Max 3 warnings** et **max 3 requetes slow** affichees
+3. **DOM toujours en dernier**, apres un separateur `--- DOM Snapshot ---`
+4. **Sections absentes** : si une donnee n'a pas ete capturee, la section n'apparait pas (pas de "N/A")
+5. **Pas de jugement** : jamais "bug found", "issue detected", etc.
+6. L'algorithme de generation est implemente dans `src/lib/format.ts`
+
+### Taille du texte par preset
+
+| Preset | Taille typique | Tokens (~) | Use case |
+|--------|---------------|------------|----------|
+| Light | 500-2000 chars | 150-500 | Usage quotidien, bugs simples |
+| Full (sans DOM) | 2K-5K chars | 500-1.5K | Bugs complexes, debugging |
+| Full (avec DOM) | 5K-500K chars | 1.5K-150K | Bugs CSS/layout, accessibilite |
+| Custom | Variable | Variable | Selon les donnees selectionnees |
+
+Note : l'image (screenshot) est toujours presente dans le clipboard quel que soit le preset.
+
+### Re-copie depuis l'historique
+
+Quand l'utilisateur clique "Copy" sur une capture dans l'historique :
+1. Le texte est re-genere avec le preset actuellement selectionne (pas celui de la capture originale)
+2. Seules les donnees effectivement capturees sont incluses
+3. L'image est chargee depuis le fichier Downloads, avec fallback sur la miniature si le fichier a ete supprime
+4. Le clipboard est rempli en multi-format (text/plain + image/png)

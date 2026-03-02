@@ -28,7 +28,9 @@
       "WebFetch(domain:developer.chrome.com)",
       "WebFetch(domain:support.google.com)",
       "WebFetch(domain:www.computerhope.com)",
-      "WebFetch(domain:keycombiner.com)"
+      "WebFetch(domain:keycombiner.com)",
+      "mcp__chrome-devtools__list_pages",
+      "mcp__chrome-devtools__list_console_messages"
     ]
   }
 }

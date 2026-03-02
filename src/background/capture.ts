@@ -22,7 +22,7 @@ import { saveCapture } from "./history"
 import { generateTextContent } from "../lib/format"
 
 function shouldCapture(dataType: string, preset: Preset, customOptions?: CustomOptions): boolean {
-  if (preset === "light") return dataType === "console" || dataType === "network" || dataType === "interactions"
+  if (preset === "light") return dataType === "console" || dataType === "network"
   if (preset === "full") return true
   if (preset === "custom" && customOptions) {
     return customOptions[dataType as keyof CustomOptions] ?? false
@@ -224,13 +224,28 @@ export async function capturePage(
     })
     const clipboardImage = elementScreenshotDataUrl ?? areaScreenshotDataUrl ?? screenshotDataUrl
 
-    // Run downloads (with UI suppression), clipboard, history, and notification in parallel
-    const parallelTasks: Promise<unknown>[] = []
+    // Build result immediately so the popup gets a fast response
+    const result: CaptureResult = {
+      screenshot: elementScreenshotDataUrl ?? areaScreenshotDataUrl ?? screenshotDataUrl,
+      fullScreenshot: (elementScreenshotDataUrl || areaScreenshotDataUrl) ? screenshotDataUrl : undefined,
+      clipboardText: textContent,
+      domain,
+      url: tab.url,
+      title: tab.title ?? "",
+      screenshotPath: filename,
+      areaScreenshotPath: areaFilename,
+      elementScreenshotPath: elementFilename,
+      capturedData,
+      stats,
+    }
+
+    // Fire-and-forget side-effects: downloads, clipboard, history, notification.
+    // The service worker stays alive while Chrome API calls are pending.
+    const sideEffects: Promise<unknown>[] = []
 
     if (!skipDownloads) {
-      parallelTasks.push(
+      sideEffects.push(
         (async () => {
-          // Temporarily hide Chrome's download bubble during capture (Chrome 105+)
           await chrome.downloads.setUiOptions({ enabled: false }).catch(() => {})
           try {
             const downloadStarts: Promise<number>[] = []
@@ -255,32 +270,28 @@ export async function capturePage(
                 }),
               )
             }
-            // Wait for all downloads to actually complete (not just initiate)
             const ids = await Promise.all(downloadStarts)
             await Promise.all(ids.map((id) => waitForDownloadComplete(id)))
           } finally {
-            // Always restore Chrome's download bubble
             chrome.downloads.setUiOptions({ enabled: true }).catch(() => {})
           }
         })(),
       )
     }
 
-    // Only write clipboard from background when not handled by caller (e.g. keyboard shortcut)
     if (!skipClipboard) {
-      const settingsResult = await chrome.storage.local.get("pagenab_settings")
-      const clipboardMode: ClipboardMode =
-        (settingsResult.pagenab_settings as Settings | undefined)?.clipboardMode ??
-        DEFAULT_SETTINGS.clipboardMode
-      parallelTasks.push(
-        writeToClipboard(textContent, clipboardImage, clipboardMode).catch(() => {
-          // Clipboard write failure is non-critical
-        }),
+      sideEffects.push(
+        (async () => {
+          const settingsResult = await chrome.storage.local.get("pagenab_settings")
+          const clipboardMode: ClipboardMode =
+            (settingsResult.pagenab_settings as Settings | undefined)?.clipboardMode ??
+            DEFAULT_SETTINGS.clipboardMode
+          await writeToClipboard(textContent, clipboardImage, clipboardMode)
+        })().catch(() => {}),
       )
     }
 
-    await Promise.all([
-      ...parallelTasks,
+    sideEffects.push(
       saveCapture(
         screenshotDataUrl,
         metadata,
@@ -297,48 +308,34 @@ export async function capturePage(
         elementData,
         elementScreenshotDataUrl,
         elementFilename,
-      ).catch(() => {
-        // History save failure is non-critical
-      }),
-      (async () => {
-        try {
-          const manifest = chrome.runtime.getManifest()
-          const iconUrl = manifest.icons?.["128"] ?? manifest.icons?.["48"] ?? ""
-          const notifSettingsResult = await chrome.storage.local.get("pagenab_settings")
-          const notifClipMode =
-            (notifSettingsResult.pagenab_settings as Settings | undefined)?.clipboardMode ??
-            DEFAULT_SETTINGS.clipboardMode
-          const clipMsg =
-            notifClipMode === "text"
-              ? "Text copied"
-              : notifClipMode === "image"
-                ? "Screenshot copied"
-                : "Copied"
-          await chrome.notifications.create(`pagenab-${Date.now()}`, {
-            type: "basic",
-            iconUrl,
-            title: "PageNab",
-            message: `Captured! ${clipMsg}. Paste in your AI assistant.\n${domain}`,
-          })
-        } catch {
-          // Notification failure is non-critical
-        }
-      })(),
-    ])
+      ).catch(() => {}),
+    )
 
-    const result: CaptureResult = {
-      screenshot: elementScreenshotDataUrl ?? areaScreenshotDataUrl ?? screenshotDataUrl,
-      fullScreenshot: (elementScreenshotDataUrl || areaScreenshotDataUrl) ? screenshotDataUrl : undefined,
-      clipboardText: textContent,
-      domain,
-      url: tab.url,
-      title: tab.title ?? "",
-      screenshotPath: filename,
-      areaScreenshotPath: areaFilename,
-      elementScreenshotPath: elementFilename,
-      capturedData,
-      stats,
-    }
+    sideEffects.push(
+      (async () => {
+        const manifest = chrome.runtime.getManifest()
+        const iconUrl = manifest.icons?.["128"] ?? manifest.icons?.["48"] ?? ""
+        const notifSettingsResult = await chrome.storage.local.get("pagenab_settings")
+        const notifClipMode =
+          (notifSettingsResult.pagenab_settings as Settings | undefined)?.clipboardMode ??
+          DEFAULT_SETTINGS.clipboardMode
+        const clipMsg =
+          notifClipMode === "text"
+            ? "Text copied"
+            : notifClipMode === "image"
+              ? "Screenshot copied"
+              : "Copied"
+        await chrome.notifications.create(`pagenab-${Date.now()}`, {
+          type: "basic",
+          iconUrl,
+          title: "PageNab",
+          message: `Captured! ${clipMsg}. Paste in your AI assistant.\n${domain}`,
+        })
+      })().catch(() => {}),
+    )
+
+    // Don't await — let side-effects complete in background
+    Promise.all(sideEffects).catch(() => {})
 
     return { success: true, data: result }
   } catch (err) {
@@ -350,14 +347,33 @@ export async function capturePage(
 /** Wait for a download to reach a terminal state (complete or interrupted). */
 function waitForDownloadComplete(downloadId: number): Promise<void> {
   return new Promise<void>((resolve) => {
+    let settled = false
+    const settle = () => {
+      if (settled) return
+      settled = true
+      chrome.downloads.onChanged.removeListener(listener)
+      clearTimeout(timer)
+      resolve()
+    }
+
     const listener = (delta: chrome.downloads.DownloadDelta) => {
       if (delta.id !== downloadId) return
       if (delta.state?.current === "complete" || delta.state?.current === "interrupted") {
-        chrome.downloads.onChanged.removeListener(listener)
-        resolve()
+        settle()
       }
     }
     chrome.downloads.onChanged.addListener(listener)
+
+    // Check if download already completed before listener was attached
+    chrome.downloads.search({ id: downloadId }, (results) => {
+      const state = results?.[0]?.state
+      if (state === "complete" || state === "interrupted") {
+        settle()
+      }
+    })
+
+    // Safety timeout — never hang longer than 30s
+    const timer = setTimeout(settle, 30_000)
   })
 }
 
