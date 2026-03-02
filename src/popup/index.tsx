@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { AnimatePresence, motion } from "framer-motion"
 import { Clipboard, Image } from "lucide-react"
 
@@ -7,6 +7,7 @@ import type {
   CaptureMode,
   CaptureResponse,
   CaptureResult,
+  CaptureStats,
   ClipboardMode,
   CustomOptions,
   Preset,
@@ -75,11 +76,37 @@ function IndexPopup() {
   const [clipboardMode, setClipboardMode] = useState<ClipboardMode>(
     DEFAULT_SETTINGS.clipboardMode,
   )
+  const settingsRef = useRef<Settings>({ ...DEFAULT_SETTINGS })
+
+  const savePreferences = (updates: Partial<Settings>) => {
+    const merged = { ...settingsRef.current, ...updates }
+    settingsRef.current = merged
+    chrome.runtime.sendMessage({ type: "SAVE_SETTINGS", settings: merged })
+  }
+
+  const handleModeChange = (m: CaptureMode) => {
+    setMode(m)
+    savePreferences({ screenshotMode: m })
+  }
+
+  const handlePresetChange = (p: Preset) => {
+    setPreset(p)
+    savePreferences({ preset: p })
+  }
+
+  const handleCustomOptionsChange = (o: CustomOptions) => {
+    setCustomOptions(o)
+    savePreferences({ customOptions: o })
+  }
 
   // Load settings + check for stored area/element capture result
   useEffect(() => {
     chrome.runtime.sendMessage({ type: "GET_SETTINGS" }).then((s) => {
       const settings = s as Settings
+      settingsRef.current = settings
+      setPreset(settings.preset ?? DEFAULT_SETTINGS.preset)
+      setMode(settings.screenshotMode ?? DEFAULT_SETTINGS.screenshotMode)
+      setCustomOptions(settings.customOptions ?? { ...DEFAULT_SETTINGS.customOptions })
       setClipboardMode(settings.clipboardMode ?? DEFAULT_SETTINGS.clipboardMode)
     })
 
@@ -222,9 +249,9 @@ function IndexPopup() {
                       preset={preset}
                       mode={mode}
                       customOptions={customOptions}
-                      onPresetChange={setPreset}
-                      onModeChange={setMode}
-                      onCustomOptionsChange={setCustomOptions}
+                      onPresetChange={handlePresetChange}
+                      onModeChange={handleModeChange}
+                      onCustomOptionsChange={handleCustomOptionsChange}
                       onCapture={handleCapture}
                     />
                   </motion.div>
@@ -459,8 +486,6 @@ function SuccessView({
         ? "Screenshot copied to clipboard"
         : "Copied to clipboard"
 
-  const statsLine = buildStatsLine(result)
-
   const handleCopyText = async () => {
     try {
       await navigator.clipboard.write([
@@ -513,15 +538,11 @@ function SuccessView({
       </div>
 
       {/* Domain + stats */}
-      <div>
+      <div className="flex flex-col gap-1.5">
         <p className="truncate text-sm font-semibold text-[var(--text-primary)]">
           {result.domain}
         </p>
-        {statsLine && (
-          <p className="mt-0.5 text-[11px] text-[var(--text-secondary)]">
-            {statsLine}
-          </p>
-        )}
+        <StatsSummary stats={result.stats} />
       </div>
 
       {/* Copy actions */}
@@ -625,19 +646,70 @@ function CopyActionButton({
   )
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Stats Summary ────────────────────────────────────────────────────────────
 
-function buildStatsLine(result: CaptureResult): string {
-  const parts: string[] = []
-  const s = result.stats
-  if (s.errors !== undefined) parts.push(`${s.errors} error${s.errors !== 1 ? "s" : ""}`)
-  if (s.failedRequests !== undefined) parts.push(`${s.failedRequests} failed`)
-  if (s.hasDom) parts.push("DOM ✓")
-  if (s.cookiesCount !== undefined) parts.push(`🍪 ${s.cookiesCount}`)
-  if (s.storageKeys !== undefined) parts.push(`📦 ${s.storageKeys} keys`)
-  if (s.lcpTime !== undefined) parts.push(`⚡ LCP ${(s.lcpTime / 1000).toFixed(1)}s`)
-  if (s.elementSelector) parts.push(`🎯 ${s.elementSelector}`)
-  return parts.join(" · ")
+type ChipVariant = "default" | "error" | "warning" | "success"
+
+const CHIP_STYLES: Record<ChipVariant, { background: string; color: string }> = {
+  default: { background: "var(--bg-tertiary)", color: "var(--text-secondary)" },
+  error:   { background: "var(--error-soft)",  color: "var(--error)" },
+  warning: { background: "#fffbeb",            color: "#b45309" },
+  success: { background: "var(--success-soft)", color: "var(--success)" },
+}
+
+function StatChip({ text, variant = "default" }: { text: string; variant?: ChipVariant }) {
+  const s = CHIP_STYLES[variant]
+  return (
+    <span
+      className="rounded-md px-1.5 py-0.5 text-[10px] font-medium leading-none"
+      style={s}
+    >
+      {text}
+    </span>
+  )
+}
+
+function StatsSummary({ stats: s }: { stats: CaptureStats }) {
+  const chips: Array<{ text: string; variant: ChipVariant }> = []
+
+  if (s.errors !== undefined)
+    chips.push({ text: `${s.errors} error${s.errors !== 1 ? "s" : ""}`, variant: s.errors > 0 ? "error" : "default" })
+  if (s.warnings !== undefined && s.warnings > 0)
+    chips.push({ text: `${s.warnings} warning${s.warnings !== 1 ? "s" : ""}`, variant: "warning" })
+  if (s.failedRequests !== undefined && s.failedRequests > 0)
+    chips.push({ text: `${s.failedRequests} failed`, variant: "warning" })
+  if (s.hasDom)
+    chips.push({ text: "DOM", variant: "success" })
+  if (s.cookiesCount !== undefined)
+    chips.push({ text: `${s.cookiesCount} cookie${s.cookiesCount !== 1 ? "s" : ""}`, variant: "default" })
+  if (s.storageKeys !== undefined)
+    chips.push({ text: `${s.storageKeys} key${s.storageKeys !== 1 ? "s" : ""}`, variant: "default" })
+  if (s.lcpTime !== undefined)
+    chips.push({ text: `LCP ${(s.lcpTime / 1000).toFixed(1)}s`, variant: "default" })
+  if (s.interactionsCount !== undefined && s.interactionsCount > 0)
+    chips.push({ text: `${s.interactionsCount} event${s.interactionsCount !== 1 ? "s" : ""}`, variant: "default" })
+
+  if (chips.length === 0 && !s.elementSelector) return null
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      {chips.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {chips.map((chip, i) => (
+            <StatChip key={i} text={chip.text} variant={chip.variant} />
+          ))}
+        </div>
+      )}
+      {s.elementSelector && (
+        <p
+          className="truncate rounded-md bg-[var(--bg-secondary)] px-2 py-1 font-mono text-[10px] text-[var(--text-tertiary)]"
+          title={s.elementSelector}
+        >
+          {s.elementSelector}
+        </p>
+      )}
+    </div>
+  )
 }
 
 export default IndexPopup

@@ -24,7 +24,8 @@
       "mcp__chrome-devtools__new_page",
       "Bash(pkill:*)",
       "Bash(git stash:*)",
-      "Bash(git stash pop:*)"
+      "Bash(git stash pop:*)",
+      "WebFetch(domain:developer.chrome.com)"
     ]
   }
 }

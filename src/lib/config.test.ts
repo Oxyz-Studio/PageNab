@@ -15,7 +15,7 @@ describe("config defaults", () => {
   })
 
   it("has correct default screenshot mode", () => {
-    expect(DEFAULT_SETTINGS.screenshotMode).toBe("fullpage")
+    expect(DEFAULT_SETTINGS.screenshotMode).toBe("element")
   })
 
   it("has notifications enabled by default", () => {

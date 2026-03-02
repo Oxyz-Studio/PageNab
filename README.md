@@ -84,6 +84,188 @@ When you paste, the AI gets both the image and the text — full context in one 
 
 Screenshot and metadata are **always** captured regardless of preset.
 
+### Light Preset Example
+
+The default preset. Captures what matters most for quick debugging — errors, failed requests, and recent interactions.
+
+<details>
+<summary>📋 Clipboard text output (click to expand)</summary>
+
+```markdown
+# Web page capture
+
+**URL:** https://app.example.com/dashboard
+**Title:** Dashboard — MyApp
+**Time:** 2026-03-01 14:23:45
+**Viewport:** 1920x1080
+**Language:** en-US
+
+## Console
+
+2 errors, 1 warning
+
+- **ERROR** (14:23:42) TypeError: Cannot read property 'map' of undefined — `Dashboard.tsx:47`
+  at Dashboard.render (Dashboard.tsx:47:12)
+  at renderWithHooks (react-dom.js:1234:18)
+- **ERROR** (14:23:43) GET /api/users 500 (Internal Server Error) — `users.ts:12`
+- **WARN** (14:23:40) Deprecated API usage: chrome.runtime.sendMessage without callback
+
+## Network
+
+42 requests, 2 failed
+
+- **FAIL** (14:23:43) `/api/users` → 500 Internal Server Error (fetch)
+- **FAIL** (14:23:44) `/api/stats` → 403 Forbidden (fetch)
+
+## Interactions
+
+3 events
+
+- [click] button.btn-refresh "Refresh" (14:23:41)
+- [scroll] down 340px (14:23:38)
+- [click] a.nav-link "Dashboard" (14:23:35)
+
+## Screenshots
+
+`~/Downloads/PageNab_app.example.com_2026-03-01.png`
+```
+
+</details>
+
+> ~200-500 tokens of text + the screenshot image attached. Covers most debugging scenarios.
+
+### Full Preset Example
+
+Everything captured. For complex bugs where you need maximum context.
+
+<details>
+<summary>📋 Clipboard text output (click to expand)</summary>
+
+```markdown
+# Web page capture
+
+**URL:** https://app.example.com/dashboard
+**Title:** Dashboard — MyApp
+**Time:** 2026-03-01 14:23:45
+**Viewport:** 1920x1080
+**Language:** en-US
+
+## Console
+
+2 errors, 1 warning, 5 logs, 2 info
+
+- **ERROR** (14:23:42) TypeError: Cannot read property 'map' of undefined — `Dashboard.tsx:47`
+  at Dashboard.render (Dashboard.tsx:47:12)
+  at renderWithHooks (react-dom.js:1234:18)
+- **ERROR** (14:23:43) GET /api/users 500 (Internal Server Error) — `users.ts:12`
+- **WARN** (14:23:40) Deprecated API usage: chrome.runtime.sendMessage without callback
+- **LOG** (14:23:39) [Router] Navigating to /dashboard
+- **LOG** (14:23:39) [Auth] Token refreshed successfully
+- **LOG** (14:23:40) [API] Fetching user data...
+- **LOG** (14:23:41) [Store] State updated: { loading: true }
+- **LOG** (14:23:43) [Store] State updated: { loading: false, error: "500" }
+- **INFO** (14:23:38) App initialized in 342ms
+- **INFO** (14:23:39) Service worker registered
+
+## Network
+
+42 requests, 2 failed, 1 slow
+
+- (14:23:38) `/` → 200 (180ms, 14.2 KB, document)
+- (14:23:38) `/static/js/main.abc123.js` → 200 (95ms, 245.0 KB, script)
+- (14:23:38) `/static/css/app.def456.css` → 200 (42ms, 18.3 KB, stylesheet)
+- **FAIL** (14:23:43) `/api/users` → 500 (220ms, 128 B, fetch)
+- **FAIL** (14:23:44) `/api/stats` → 403 (45ms, 64 B, fetch)
+- **SLOW** (14:23:39) `/api/analytics` → 200 (4200ms, 1.2 MB, fetch)
+- (14:23:39) `/api/config` → 200 (85ms, 2.1 KB, fetch)
+- ... and 35 more
+
+## Cookies
+
+4 cookies
+
+- session_id: `a1b2***`
+- theme: `dark`
+- locale: `en-US`
+- _ga: `GA1.2***`
+
+## Storage
+
+3 localStorage, 1 sessionStorage
+
+- [local] theme: `dark`
+- [local] user_prefs: `{"sidebar":"collapsed","notifications":true}`
+- [local] last_visited: `2026-03-01T14:20:00.000Z`
+- [session] cart_items: `[]`
+
+## Performance
+
+- Load: 1240ms | DOMContentLoaded: 680ms
+- LCP: 1850ms | CLS: 0.04 | FID: 12ms
+- Memory: 45.2 MB / 4.0 GB
+
+## Interactions
+
+3 events
+
+- [click] button.btn-refresh "Refresh" (14:23:41)
+- [scroll] down 340px (14:23:38)
+- [click] a.nav-link "Dashboard" (14:23:35)
+
+## Screenshots
+
+`~/Downloads/PageNab_app.example.com_2026-03-01.png`
+
+## DOM
+
+(cleaned HTML snapshot — inline scripts removed, styles preserved)
+```
+
+</details>
+
+> ~1.5K-150K tokens of text + screenshot. Use when you need the AI to see everything.
+
+### Custom Preset Example
+
+You pick exactly what to capture. Here's an example with Console + Performance enabled:
+
+<details>
+<summary>📋 Clipboard text output (click to expand)</summary>
+
+```markdown
+# Web page capture
+
+**URL:** https://app.example.com/dashboard
+**Title:** Dashboard — MyApp
+**Time:** 2026-03-01 14:23:45
+**Viewport:** 1920x1080
+**Language:** en-US
+
+## Console
+
+2 errors, 1 warning
+
+- **ERROR** (14:23:42) TypeError: Cannot read property 'map' of undefined — `Dashboard.tsx:47`
+  at Dashboard.render (Dashboard.tsx:47:12)
+  at renderWithHooks (react-dom.js:1234:18)
+- **ERROR** (14:23:43) GET /api/users 500 (Internal Server Error) — `users.ts:12`
+- **WARN** (14:23:40) Deprecated API usage: chrome.runtime.sendMessage without callback
+
+## Performance
+
+- Load: 1240ms | DOMContentLoaded: 680ms
+- LCP: 1850ms | CLS: 0.04 | FID: 12ms
+- Memory: 45.2 MB / 4.0 GB
+
+## Screenshots
+
+`~/Downloads/PageNab_app.example.com_2026-03-01.png`
+```
+
+</details>
+
+> Only the data you selected — no noise. Screenshot + metadata are always included.
+
 ## Installation
 
 ### From Chrome Web Store

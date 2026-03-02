@@ -15,7 +15,7 @@ export const DEFAULT_CUSTOM_OPTIONS: CustomOptions = {
 export const DEFAULT_SETTINGS: Settings = {
   preset: "light",
   customOptions: { ...DEFAULT_CUSTOM_OPTIONS },
-  screenshotMode: "fullpage",
+  screenshotMode: "element",
   clipboardMode: "both",
   notifications: true,
   maxCaptures: 20,

@@ -30,8 +30,8 @@ export async function startAreaCapture(
     }
 
     // Proceed with full capture, passing the area rect
-    // skipDownloads=true so the download bubble doesn't block openPopup
-    const response = await capturePage(preset, "area", customOptions, rect, false, true)
+    // Downloads are handled by capturePage (download bubble hidden via setUiOptions)
+    const response = await capturePage(preset, "area", customOptions, rect, false)
 
     // Store result so the popup can show success view when reopened
     if (response.success) {
@@ -47,28 +47,6 @@ export async function startAreaCapture(
         await (chrome.action as unknown as { openPopup?: () => Promise<void> }).openPopup?.()
       } catch {
         // openPopup not available — user can click the icon manually
-      }
-      // Trigger downloads after popup is open
-      try {
-        const dlPromises: Promise<unknown>[] = [
-          chrome.downloads.download({
-            url: response.data.fullScreenshot ?? response.data.screenshot,
-            filename: response.data.screenshotPath,
-            saveAs: false,
-          }),
-        ]
-        if (response.data.areaScreenshotPath) {
-          dlPromises.push(
-            chrome.downloads.download({
-              url: response.data.screenshot,
-              filename: response.data.areaScreenshotPath,
-              saveAs: false,
-            }),
-          )
-        }
-        await Promise.all(dlPromises)
-      } catch {
-        // Download failure is non-critical
       }
     }
 

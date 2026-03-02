@@ -9,11 +9,13 @@ interface CheckboxProps {
 
 export function Checkbox({ checked, onChange, label }: CheckboxProps) {
   return (
-    <label className="flex cursor-pointer select-none items-center gap-2">
-      <HUICheckbox
-        checked={checked}
-        onChange={onChange}
-        className="relative flex h-4 w-4 flex-shrink-0 cursor-pointer items-center justify-center rounded outline-none border transition-all duration-150"
+    <HUICheckbox
+      checked={checked}
+      onChange={onChange}
+      className="flex cursor-pointer select-none items-center gap-2"
+    >
+      <div
+        className="relative flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border transition-all duration-150"
         style={{
           background: checked ? "var(--accent)" : "var(--bg-primary)",
           borderColor: checked ? "var(--accent)" : "var(--border-secondary)",
@@ -26,8 +28,8 @@ export function Checkbox({ checked, onChange, label }: CheckboxProps) {
           className="transition-opacity duration-150"
           style={{ opacity: checked ? 1 : 0 }}
         />
-      </HUICheckbox>
+      </div>
       <span className="text-xs text-[var(--text-secondary)]">{label}</span>
-    </label>
+    </HUICheckbox>
   )
 }

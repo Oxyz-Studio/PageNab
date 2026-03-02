@@ -1,4 +1,9 @@
 import { capturePage } from "./capture"
+
+// Hide Chrome's download bubble for all downloads initiated by this extension (Chrome 105+)
+chrome.downloads.setUiOptions({ enabled: false }).catch(() => {
+  // Not supported in older Chrome versions — download bubble will still show
+})
 import { startAreaCapture } from "./area"
 import { startElementCapture } from "./element"
 import { enableInteractionsTracking, disableInteractionsTracking } from "./interactions"
@@ -12,6 +17,7 @@ const SETTINGS_KEY = "pagenab_settings"
 chrome.storage.local.get(SETTINGS_KEY).then((result) => {
   const settings = (result[SETTINGS_KEY] as Settings) ?? DEFAULT_SETTINGS
   const needsTracking =
+    settings.preset === "light" ||
     settings.preset === "full" ||
     (settings.preset === "custom" && settings.customOptions?.interactions)
   if (needsTracking) {

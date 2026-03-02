@@ -29,14 +29,14 @@ export async function startElementCapture(
     }
 
     // Proceed with capture, passing the element rect for cropping and element data
-    // skipDownloads=true so the download bubble doesn't block openPopup
+    // Downloads are handled by capturePage (download bubble hidden via setUiOptions)
     const response = await capturePage(
       preset,
       "element",
       customOptions,
       result.rect,
       false,
-      true,
+      false,
       result.element,
     )
 
@@ -54,28 +54,6 @@ export async function startElementCapture(
         await (chrome.action as unknown as { openPopup?: () => Promise<void> }).openPopup?.()
       } catch {
         // openPopup not available — user can click the icon manually
-      }
-      // Trigger downloads after popup is open
-      try {
-        const dlPromises: Promise<unknown>[] = [
-          chrome.downloads.download({
-            url: response.data.fullScreenshot ?? response.data.screenshot,
-            filename: response.data.screenshotPath,
-            saveAs: false,
-          }),
-        ]
-        if (response.data.elementScreenshotPath) {
-          dlPromises.push(
-            chrome.downloads.download({
-              url: response.data.screenshot,
-              filename: response.data.elementScreenshotPath,
-              saveAs: false,
-            }),
-          )
-        }
-        await Promise.all(dlPromises)
-      } catch {
-        // Download failure is non-critical
       }
     }
 
