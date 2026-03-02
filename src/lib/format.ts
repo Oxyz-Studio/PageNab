@@ -164,43 +164,71 @@ export function generateTextContent(input: FormatInput): string {
     lines.push("")
 
     const s = input.console.summary
-    const parts: string[] = []
-    if (s.errors > 0) parts.push(`${s.errors} error${s.errors !== 1 ? "s" : ""}`)
-    if (s.warnings > 0) parts.push(`${s.warnings} warning${s.warnings !== 1 ? "s" : ""}`)
-    if (s.logs > 0) parts.push(`${s.logs} log${s.logs !== 1 ? "s" : ""}`)
-    if (s.info > 0) parts.push(`${s.info} info`)
+    const isLight = m.preset === "light"
 
-    if (parts.length === 0) {
-      lines.push("No console output.")
-    } else {
-      lines.push(parts.join(", "))
-      lines.push("")
+    if (isLight) {
+      // Light mode: summary with total + errors only (like network Light)
+      if (s.errors === 0 && s.warnings === 0) {
+        lines.push("No console errors.")
+      } else {
+        const parts: string[] = [`${s.total} entries`]
+        parts.push(`${s.errors} error${s.errors !== 1 ? "s" : ""}`)
+        parts.push(`${s.warnings} warning${s.warnings !== 1 ? "s" : ""}`)
+        lines.push(parts.join(", "))
+        lines.push("")
 
-      const errors = input.console.logs.filter((l) => l.level === "error").slice(0, 5)
-      for (const log of errors) {
-        const location =
-          log.source || log.line
-            ? ` — \`${extractFile(log.source)}${log.line ? `:${log.line}` : ""}\``
-            : ""
-        lines.push(`- **ERROR** (${formatTime(log.timestamp)}) ${truncate(log.message, 200)}${location}`)
-        if (log.stack) {
-          lines.push(formatStack(log.stack, 3))
+        const errors = input.console.logs.filter((l) => l.level === "error").slice(0, 5)
+        for (const log of errors) {
+          const location =
+            log.source || log.line
+              ? ` — \`${extractFile(log.source)}${log.line ? `:${log.line}` : ""}\``
+              : ""
+          lines.push(`- **ERROR** (${formatTime(log.timestamp)}) ${truncate(log.message, 200)}${location}`)
+          if (log.stack) {
+            lines.push(formatStack(log.stack, 3))
+          }
         }
       }
+    } else {
+      // Full/Custom mode: detailed summary + all entry types
+      const parts: string[] = []
+      if (s.errors > 0) parts.push(`${s.errors} error${s.errors !== 1 ? "s" : ""}`)
+      if (s.warnings > 0) parts.push(`${s.warnings} warning${s.warnings !== 1 ? "s" : ""}`)
+      if (s.logs > 0) parts.push(`${s.logs} log${s.logs !== 1 ? "s" : ""}`)
+      if (s.info > 0) parts.push(`${s.info} info`)
 
-      const warnings = input.console.logs.filter((l) => l.level === "warning").slice(0, 3)
-      for (const warn of warnings) {
-        lines.push(`- **WARN** (${formatTime(warn.timestamp)}) ${truncate(warn.message, 200)}`)
-      }
+      if (parts.length === 0) {
+        lines.push("No console output.")
+      } else {
+        lines.push(parts.join(", "))
+        lines.push("")
 
-      const logEntries = input.console.logs.filter((l) => l.level === "log").slice(0, 10)
-      for (const log of logEntries) {
-        lines.push(`- **LOG** (${formatTime(log.timestamp)}) ${truncate(log.message, 200)}`)
-      }
+        const errors = input.console.logs.filter((l) => l.level === "error").slice(0, 5)
+        for (const log of errors) {
+          const location =
+            log.source || log.line
+              ? ` — \`${extractFile(log.source)}${log.line ? `:${log.line}` : ""}\``
+              : ""
+          lines.push(`- **ERROR** (${formatTime(log.timestamp)}) ${truncate(log.message, 200)}${location}`)
+          if (log.stack) {
+            lines.push(formatStack(log.stack, 3))
+          }
+        }
 
-      const infoEntries = input.console.logs.filter((l) => l.level === "info").slice(0, 5)
-      for (const info of infoEntries) {
-        lines.push(`- **INFO** (${formatTime(info.timestamp)}) ${truncate(info.message, 200)}`)
+        const warnings = input.console.logs.filter((l) => l.level === "warning").slice(0, 3)
+        for (const warn of warnings) {
+          lines.push(`- **WARN** (${formatTime(warn.timestamp)}) ${truncate(warn.message, 200)}`)
+        }
+
+        const logEntries = input.console.logs.filter((l) => l.level === "log").slice(0, 10)
+        for (const log of logEntries) {
+          lines.push(`- **LOG** (${formatTime(log.timestamp)}) ${truncate(log.message, 200)}`)
+        }
+
+        const infoEntries = input.console.logs.filter((l) => l.level === "info").slice(0, 5)
+        for (const info of infoEntries) {
+          lines.push(`- **INFO** (${formatTime(info.timestamp)}) ${truncate(info.message, 200)}`)
+        }
       }
     }
   }

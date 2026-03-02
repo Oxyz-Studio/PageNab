@@ -248,7 +248,7 @@ function IndexPopup() {
             )}
 
             <div className="px-5 pb-6 pt-5">
-              <AnimatePresence initial={false}>
+              <AnimatePresence mode="popLayout" initial={false}>
                 {state.status === "idle" && (
                   <motion.div
                     key="idle"

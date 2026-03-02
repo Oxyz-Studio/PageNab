@@ -9,7 +9,7 @@ export interface CollectorOptions {
   cookies: boolean
   storage: boolean
   performance: boolean
-  consoleFilter: "errors-warnings" | "all"
+  consoleFilter: "errors" | "all"
   networkFilter: "failed" | "failed-slow" | "all"
 }
 
@@ -20,7 +20,7 @@ export interface CollectorResult {
     colorScheme: "light" | "dark"
   }
   console?: {
-    summary: { errors: number; warnings: number; logs: number; info: number }
+    summary: { total: number; errors: number; warnings: number; logs: number; info: number }
     logs: Array<{
       level: string
       message: string
@@ -147,12 +147,12 @@ export function collectPageData(options: CollectorOptions): CollectorResult {
     }))
 
     const filteredLogs =
-      options.consoleFilter === "errors-warnings"
-        ? rawLogs.filter((l) => l.level === "error" || l.level === "warning")
+      options.consoleFilter === "errors"
+        ? rawLogs.filter((l) => l.level === "error")
         : rawLogs
 
-    const summary = { errors: 0, warnings: 0, logs: 0, info: 0 }
-    for (const l of filteredLogs) {
+    const summary = { total: rawLogs.length, errors: 0, warnings: 0, logs: 0, info: 0 }
+    for (const l of rawLogs) {
       switch (l.level) {
         case "error":
           summary.errors++

@@ -58,14 +58,50 @@ describe("generateTextContent", () => {
     )
   })
 
-  it("shows clean console message when no issues", () => {
+  it("shows clean console message when no issues (light mode)", () => {
     const input = makeBaseInput({
       metadata: {
         ...makeBaseInput().metadata,
+        preset: "light",
         capturedData: ["console"],
       },
       console: {
-        summary: { errors: 0, warnings: 0, logs: 0, info: 0 },
+        summary: { total: 0, errors: 0, warnings: 0, logs: 0, info: 0 },
+        logs: [],
+      },
+    })
+    const text = generateTextContent(input)
+    expect(text).toContain("## Console")
+    expect(text).toContain("No console errors.")
+  })
+
+  it("shows 'No console errors.' in light mode when entries exist but no errors/warnings", () => {
+    const input = makeBaseInput({
+      metadata: {
+        ...makeBaseInput().metadata,
+        preset: "light",
+        capturedData: ["console"],
+      },
+      console: {
+        summary: { total: 10, errors: 0, warnings: 0, logs: 8, info: 2 },
+        logs: [],
+      },
+    })
+    const text = generateTextContent(input)
+    expect(text).toContain("## Console")
+    expect(text).toContain("No console errors.")
+    expect(text).not.toContain("10 entries")
+  })
+
+  it("shows 'No console output.' in full mode when no entries", () => {
+    const input = makeBaseInput({
+      metadata: {
+        ...makeBaseInput().metadata,
+        preset: "full",
+        capturedData: ["console"],
+      },
+      console: {
+        summary: { total: 0, errors: 0, warnings: 0, logs: 0, info: 0 },
         logs: [],
       },
     })
@@ -74,14 +110,15 @@ describe("generateTextContent", () => {
     expect(text).toContain("No console output.")
   })
 
-  it("includes console errors when captured", () => {
+  it("includes console errors in light mode with total summary", () => {
     const input = makeBaseInput({
       metadata: {
         ...makeBaseInput().metadata,
+        preset: "light",
         capturedData: ["console"],
       },
       console: {
-        summary: { errors: 1, warnings: 0, logs: 0, info: 0 },
+        summary: { total: 30, errors: 1, warnings: 5, logs: 20, info: 4 },
         logs: [
           {
             level: "error",
@@ -95,21 +132,42 @@ describe("generateTextContent", () => {
     })
     const text = generateTextContent(input)
     expect(text).toContain("## Console")
-    expect(text).toContain("1 error")
+    expect(text).toContain("30 entries, 1 error, 5 warnings")
     expect(text).toMatch(
       /\*\*ERROR\*\* \(\d{2}:\d{2}:\d{2}\) TypeError: Cannot read property 'map' of undefined/,
     )
     expect(text).toContain("`main.js:47`")
+    // Light mode: no WARN entries displayed
+    expect(text).not.toContain("**WARN**")
   })
 
-  it("includes console warnings", () => {
+  it("light mode: warnings counted in summary but not displayed as entries", () => {
     const input = makeBaseInput({
       metadata: {
         ...makeBaseInput().metadata,
+        preset: "light",
         capturedData: ["console"],
       },
       console: {
-        summary: { errors: 0, warnings: 2, logs: 0, info: 0 },
+        summary: { total: 5, errors: 0, warnings: 2, logs: 3, info: 0 },
+        logs: [],
+      },
+    })
+    const text = generateTextContent(input)
+    expect(text).toContain("5 entries, 0 errors, 2 warnings")
+    // No WARN entries displayed in light mode
+    expect(text).not.toContain("**WARN**")
+  })
+
+  it("full mode: warnings displayed as entries", () => {
+    const input = makeBaseInput({
+      metadata: {
+        ...makeBaseInput().metadata,
+        preset: "full",
+        capturedData: ["console"],
+      },
+      console: {
+        summary: { total: 2, errors: 0, warnings: 2, logs: 0, info: 0 },
         logs: [
           {
             level: "warning",
@@ -138,7 +196,7 @@ describe("generateTextContent", () => {
         capturedData: ["console"],
       },
       console: {
-        summary: { errors: 1, warnings: 1, logs: 2, info: 1 },
+        summary: { total: 5, errors: 1, warnings: 1, logs: 2, info: 1 },
         logs: [
           {
             level: "error",
@@ -546,7 +604,7 @@ describe("generateTextContent", () => {
         accessibility: {},
       },
       console: {
-        summary: { errors: 0, warnings: 0, logs: 0, info: 0 },
+        summary: { total: 0, errors: 0, warnings: 0, logs: 0, info: 0 },
         logs: [],
       },
     })

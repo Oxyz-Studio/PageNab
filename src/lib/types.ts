@@ -61,7 +61,7 @@ export interface ConsoleLog {
 }
 
 export interface ConsoleData {
-  summary: { errors: number; warnings: number; logs: number; info: number }
+  summary: { total: number; errors: number; warnings: number; logs: number; info: number }
   logs: ConsoleLog[]
 }
 

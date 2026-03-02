@@ -26,8 +26,8 @@ export function startElementSelection(): Promise<ElementSelectionResult | null> 
     style.id = "pagenab-element-style"
     style.textContent = `
 @keyframes pagenab-glow {
-  0%, 100% { box-shadow: 0 0 0 2px rgba(99,102,241,0.6), 0 0 8px 0 rgba(99,102,241,0.15) !important; }
-  50% { box-shadow: 0 0 0 2px rgba(99,102,241,0.6), 0 0 16px 2px rgba(99,102,241,0.25) !important; }
+  0%, 100% { box-shadow: 0 0 0 2px rgba(99,102,241,0.6), 0 0 8px 0 rgba(99,102,241,0.15); }
+  50% { box-shadow: 0 0 0 2px rgba(99,102,241,0.6), 0 0 16px 2px rgba(99,102,241,0.25); }
 }
 @keyframes pagenab-selected {
   0% { outline-color: #6366f1; box-shadow: 0 0 0 2px rgba(99,102,241,0.6), 0 0 12px 2px rgba(99,102,241,0.3); }
@@ -38,8 +38,8 @@ export function startElementSelection(): Promise<ElementSelectionResult | null> 
   from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
   to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
-.${highlightClass} { outline: 2px solid #6366f1 !important; outline-offset: 2px !important; box-shadow: 0 0 0 2px rgba(99,102,241,0.6), 0 0 8px 0 rgba(99,102,241,0.15) !important; animation: pagenab-glow 2s ease-in-out infinite !important; will-change: box-shadow !important; }
-.pagenab-selected { outline: 2px solid #818cf8 !important; outline-offset: 2px !important; animation: pagenab-selected 0.35s cubic-bezier(0.16,1,0.3,1) forwards !important; will-change: box-shadow, outline-color !important; }
+.${highlightClass} { outline: 2px solid #6366f1 !important; outline-offset: 2px !important; animation: pagenab-glow 2s ease-in-out infinite !important; will-change: box-shadow !important; }
+.pagenab-selected { outline-width: 2px !important; outline-style: solid !important; outline-offset: 2px !important; animation: pagenab-selected 0.35s cubic-bezier(0.16,1,0.3,1) forwards !important; will-change: box-shadow, outline-color !important; }
 `
     document.head.appendChild(style)
 

@@ -74,7 +74,7 @@ export async function capturePage(
       cookies: wants("cookies"),
       storage: wants("storage"),
       performance: wants("performance"),
-      consoleFilter: preset === "light" ? "errors-warnings" : "all",
+      consoleFilter: preset === "light" ? "errors" : "all",
       networkFilter: preset === "light" ? "failed" : "all",
     }
 

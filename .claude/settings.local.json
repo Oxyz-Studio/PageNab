@@ -30,7 +30,9 @@
       "WebFetch(domain:www.computerhope.com)",
       "WebFetch(domain:keycombiner.com)",
       "mcp__chrome-devtools__list_pages",
-      "mcp__chrome-devtools__list_console_messages"
+      "mcp__chrome-devtools__list_console_messages",
+      "WebFetch(domain:gofullpage.com)",
+      "WebFetch(domain:getfireshot.com)"
     ]
   }
 }

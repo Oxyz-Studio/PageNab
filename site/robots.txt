@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://oxyz-studio.github.io/PageNab/sitemap.xml
