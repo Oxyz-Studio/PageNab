@@ -81,7 +81,7 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
             {(
               [
                 ["text", "Text only", "Best for AI assistants. Screenshot saved to Downloads."],
-                ["image", "Image only", "Pastes the screenshot. Text data in Downloads."],
+                ["image", "Image only", "Pastes the screenshot. Text data in capture history."],
                 ["both", "Both", "May not work in all apps (some only read one format)."],
               ] as const
             ).map(([value, label, desc]) => {

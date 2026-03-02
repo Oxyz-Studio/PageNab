@@ -65,37 +65,86 @@
   }
 
   /* ── HERO ANIMATION ─────────────────────────────────────── */
-  const line1 = document.querySelector('.hero-title-line-1');
-  const line2 = document.querySelector('.hero-title-line-2');
+  const line1    = document.querySelector('.hero-title-line-1');
+  const nabBlock = document.querySelector('.hero-nab-block');
+  const nabArrow = document.querySelector('.hero-nab-arrow');
 
   const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
 
-  if (line1 && line2) {
+  // "Page" — char-by-char stagger rise
+  if (line1) {
     const chars1 = splitChars(line1);
-    const chars2 = splitChars(line2);
-
     tl.from(chars1, {
       y: 90,
       opacity: 0,
       rotateX: -60,
-      stagger: 0.04,
+      stagger: 0.045,
       duration: 0.9,
-    })
-    .from(chars2, {
-      y: 110,
-      opacity: 0,
-      rotateX: -70,
-      stagger: 0.055,
-      duration: 1,
-    }, '-=0.55');
+    });
   }
 
-  tl.to('.hero-eyebrow',  { opacity: 1, y: 0, duration: 0.6 }, '-=0.4')
+  // "Nab" — slides in from right, snaps from extra counter-clockwise to final -8deg
+  if (nabBlock) {
+    tl.from(nabBlock, {
+      x: 100,
+      opacity: 0,
+      rotate: -22,
+      transformOrigin: 'left bottom',
+      duration: 1.1,
+      ease: 'back.out(1.4)',
+    }, '-=0.5');
+  }
+
+  // Arrow — pops in with a spring, then floats continuously
+  if (nabArrow) {
+    gsap.set(nabArrow, { opacity: 0, scale: 0, rotate: -90, transformOrigin: '50% 50%' });
+
+    tl.to(nabArrow, {
+      opacity: 1,
+      scale: 1,
+      rotate: 0,
+      duration: 0.65,
+      ease: 'back.out(2.8)',
+      transformOrigin: '50% 50%',
+    }, '-=0.15');
+
+    // After intro — continuous float + subtle rotate pulse
+    tl.add(() => {
+      gsap.to(nabArrow, {
+        y: -9,
+        duration: 1.4,
+        ease: 'sine.inOut',
+        repeat: -1,
+        yoyo: true,
+      });
+      gsap.to(nabArrow, {
+        rotate: 8,
+        duration: 2.2,
+        ease: 'sine.inOut',
+        repeat: -1,
+        yoyo: true,
+      });
+    });
+  }
+
+  // Rest of hero elements
+  tl.to('.hero-eyebrow',  { opacity: 1, y: 0, duration: 0.6 }, '-=1.0')
     .to('.hero-subtitle', { opacity: 1, y: 0, duration: 0.6 }, '-=0.4')
     .to('.hero-actions',  { opacity: 1, y: 0, duration: 0.5 }, '-=0.35')
     .to('.hero-trust',    { opacity: 1, y: 0, duration: 0.5 }, '-=0.3')
     .to('.hero-card',     { opacity: 1, y: 0, duration: 0.8, ease: 'power2.out' }, '-=0.5')
     .to('.hero-scroll',   { opacity: 1, duration: 0.5 }, '-=0.2');
+
+  /* ── NAV LOGO HOVER ─────────────────────────────────────── */
+  const navLogo = document.querySelector('.nav-logo');
+  if (navLogo) {
+    navLogo.addEventListener('mouseenter', () => {
+      gsap.to(navLogo, { scale: 1.04, duration: 0.25, ease: 'power2.out' });
+    });
+    navLogo.addEventListener('mouseleave', () => {
+      gsap.to(navLogo, { scale: 1, duration: 0.4, ease: 'elastic.out(1, 0.5)' });
+    });
+  }
 
   /* ── SECTION HEADING SPLIT REVEALS ─────────────────────── */
   document.querySelectorAll('[data-split]').forEach(el => {

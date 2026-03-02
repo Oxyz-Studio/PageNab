@@ -2,6 +2,8 @@ import { motion } from "framer-motion"
 import { ChevronLeft, Clock, Settings } from "lucide-react"
 import type { ReactNode } from "react"
 
+import logoUrl from "data-base64:../../../assets/images/logo.png"
+
 interface IconButtonProps {
   onClick?: () => void
   title?: string
@@ -55,10 +57,12 @@ export function Header({
             {title}
           </span>
         ) : (
-          <span className="text-base font-black tracking-tight select-none text-[var(--text-primary)]">
-            Page
-            <span className="text-[var(--accent)]">Nab</span>
-          </span>
+          <img
+            src={logoUrl}
+            alt="PageNab"
+            className="h-5 select-none"
+            draggable={false}
+          />
         )}
 
         {status && (

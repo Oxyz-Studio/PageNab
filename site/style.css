@@ -66,9 +66,9 @@ a:hover { color: var(--accent-hover); }
   --space-sm: 1rem;
   --space-md: 1.5rem;
   --space-lg: 2.5rem;
-  --space-xl: 4rem;
-  --space-2xl: 7rem;
-  --space-3xl: 10rem;
+  --space-xl: 3rem;
+  --space-2xl: 5rem;
+  --space-3xl: 8rem;
 
   /* Layout */
   --max-w: 1200px;
@@ -140,15 +140,21 @@ section { padding: var(--space-2xl) 0; }
 }
 
 .section-header h2 {
-  font-size: clamp(2.2rem, 5vw, 4rem);
-  margin-bottom: 0.6rem;
+  font-size: clamp(2rem, 4.5vw, 3.5rem);
+  margin-bottom: 0.75rem;
 }
 
 .section-header p {
-  font-size: 1.05rem;
+  font-size: 1rem;
   color: var(--text-muted);
   max-width: 540px;
   line-height: 1.65;
+}
+
+/* Global: data-split headings get generous bottom margin so grids never crowd them */
+[data-split] {
+  font-size: clamp(2rem, 4.5vw, 3.5rem);
+  margin-bottom: var(--space-lg);
 }
 
 /* ── 6. NAV ───────────────────────────────────────────────── */
@@ -177,17 +183,20 @@ section { padding: var(--space-2xl) 0; }
 }
 
 .nav-logo {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 1.25rem;
-  letter-spacing: -0.04em;
-  color: var(--text);
+  display: inline-flex;
+  align-items: center;
   text-decoration: none;
+  flex-shrink: 0;
+  transition: opacity 0.2s ease;
 }
 
-.nav-logo .accent { color: var(--accent); }
+.nav-logo-img {
+  height: 40px;
+  width: auto;
+  display: block;
+}
 
-.nav-logo:hover { color: var(--text); text-decoration: none; }
+.nav-logo:hover { opacity: 0.8; text-decoration: none; }
 
 .nav-links {
   display: flex;
@@ -309,7 +318,8 @@ section { padding: var(--space-2xl) 0; }
 
 .hero-title-line {
   display: block;
-  overflow: hidden;
+  overflow: visible;
+  padding-bottom: 0.12em; /* room for descenders like g, p, y */
 }
 
 .hero-title-line-1 {
@@ -322,6 +332,35 @@ section { padding: var(--space-2xl) 0; }
   font-size: clamp(6rem, 16vw, 15rem);
   color: var(--accent);
   font-weight: 700;
+  overflow: visible; /* allow rotated nab + arrow to breathe */
+}
+
+/* ── NAB BLOCK (hero) ─────────────────────────────────────── */
+.hero-nab-block {
+  display: inline-flex;
+  align-items: flex-end;
+  position: relative;
+}
+
+.hero-nab-text {
+  display: inline-block;
+  transform: rotate(-8deg);
+  transform-origin: left bottom;
+  color: var(--accent);
+  will-change: transform;
+}
+
+.hero-nab-arrow {
+  display: inline-flex;
+  align-items: flex-end;
+  margin-left: 0.04em;
+  margin-bottom: 0.08em;
+  will-change: transform;
+}
+
+.hero-nab-arrow svg {
+  width: 0.24em;
+  height: 0.24em;
 }
 
 /* Char spans for split animation */
@@ -542,15 +581,15 @@ section { padding: var(--space-2xl) 0; }
 }
 
 .problem-heading {
-  font-size: clamp(2.2rem, 5vw, 4rem);
-  margin-bottom: 0.5rem;
+  font-size: clamp(2rem, 4.5vw, 3.5rem);
+  margin-bottom: var(--space-md);
 }
 
 .problem-sub {
-  font-size: 1.05rem;
+  font-size: 1rem;
   color: var(--text-muted);
   max-width: 480px;
-  margin-bottom: var(--space-xl);
+  margin-bottom: var(--space-lg);
 }
 
 .problem-grid {
@@ -1048,15 +1087,15 @@ section { padding: var(--space-2xl) 0; }
 }
 
 .privacy-heading {
-  font-size: clamp(2.5rem, 6vw, 5rem);
-  margin-bottom: var(--space-sm);
+  font-size: clamp(2rem, 4.5vw, 3.5rem);
+  margin-bottom: var(--space-md);
 }
 
 .privacy-sub {
-  font-size: 1.05rem;
+  font-size: 1rem;
   color: var(--text-muted);
   max-width: 520px;
-  margin-bottom: var(--space-xl);
+  margin-bottom: var(--space-lg);
 }
 
 .privacy-stats {
@@ -1433,15 +1472,15 @@ footer {
 /* ── 23. RESPONSIVE GLOBAL ────────────────────────────────── */
 @media (max-width: 768px) {
   :root {
-    --space-2xl: 5rem;
-    --space-3xl: 7rem;
+    --space-2xl: 4rem;
+    --space-3xl: 5.5rem;
   }
 }
 
 @media (max-width: 480px) {
   :root {
-    --space-xl: 3rem;
-    --space-2xl: 4rem;
+    --space-xl: 2.5rem;
+    --space-2xl: 3rem;
   }
 }
 
