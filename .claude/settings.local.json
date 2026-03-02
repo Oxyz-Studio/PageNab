@@ -32,7 +32,11 @@
       "mcp__chrome-devtools__list_pages",
       "mcp__chrome-devtools__list_console_messages",
       "WebFetch(domain:gofullpage.com)",
-      "WebFetch(domain:getfireshot.com)"
+      "WebFetch(domain:getfireshot.com)",
+      "Bash(git -C /Users/alex/Code/PageNab status)",
+      "Bash(echo:*)",
+      "Bash(/usr/bin/git -C /Users/alex/Code/PageNab status)",
+      "Bash(/usr/bin/git --version)"
     ]
   }
 }
