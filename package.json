@@ -1,8 +1,18 @@
 {
   "name": "pagenab",
   "displayName": "PageNab",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Capture complete web page context and paste it into any AI assistant",
+  "author": "Oxyz Studio",
+  "license": "MIT",
+  "homepage": "https://github.com/Oxyz-Studio/PageNab",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Oxyz-Studio/PageNab.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Oxyz-Studio/PageNab/issues"
+  },
   "scripts": {
     "dev": "plasmo dev",
     "build": "plasmo build",
@@ -13,6 +23,9 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@headlessui/react": "^2.2.9",
+    "framer-motion": "^11.18.2",
+    "lucide-react": "^0.576.0",
     "plasmo": "^0.90.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"

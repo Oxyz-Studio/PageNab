@@ -1,3 +1,53 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --neu-base: #e0e5ec;
+  --neu-dark: #a3b1c6;
+  --neu-light: #ffffff;
+  --neu-accent: #6366f1;
+  --neu-accent-glow: rgba(99, 102, 241, 0.35);
+  --neu-text1: #2d3142;
+  --neu-text2: #6b7280;
+  --neu-success: #10b981;
+  --neu-error: #ef4444;
+  --neu-warning: #f59e0b;
+
+  --shadow-raised: 6px 6px 14px var(--neu-dark), -6px -6px 14px var(--neu-light);
+  --shadow-raised-sm: 3px 3px 7px var(--neu-dark), -3px -3px 7px var(--neu-light);
+  --shadow-inset: inset 4px 4px 10px var(--neu-dark), inset -4px -4px 10px var(--neu-light);
+  --shadow-inset-sm: inset 2px 2px 5px var(--neu-dark), inset -2px -2px 5px var(--neu-light);
+  --shadow-pressed: inset 3px 3px 8px var(--neu-dark), inset -1px -1px 4px var(--neu-light);
+  --shadow-accent: 4px 4px 12px var(--neu-accent-glow), -4px -4px 12px var(--neu-light);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--neu-base);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  color: var(--neu-text1);
+}
+
+/* Neumorphic scrollbar */
+.neu-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--neu-dark) var(--neu-base);
+}
+.neu-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.neu-scroll::-webkit-scrollbar-track {
+  background: var(--neu-base);
+}
+.neu-scroll::-webkit-scrollbar-thumb {
+  background: var(--neu-dark);
+  border-radius: 2px;
+}
+.neu-scroll::-webkit-scrollbar-thumb:hover {
+  background: #8a9ab5;
+}

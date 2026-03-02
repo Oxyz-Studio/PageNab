@@ -17,6 +17,7 @@ function makeBaseInput(overrides: Partial<FormatInput> = {}): FormatInput {
       colorScheme: "light",
       captureMode: "fullpage",
       areaRect: null,
+      elementRect: null,
       preset: "light",
       capturedData: [],
       captureVersion: "1.0.0",
@@ -491,6 +492,101 @@ describe("generateTextContent", () => {
     expect(text).not.toContain("## Performance")
     expect(text).not.toContain("## Interactions")
     expect(text).not.toContain("## DOM")
+  })
+
+  it("includes element section when capturedData contains element", () => {
+    const input = makeBaseInput({
+      metadata: {
+        ...makeBaseInput().metadata,
+        captureMode: "element",
+        capturedData: ["element"],
+        elementRect: { x: 100, y: 200, width: 120, height: 40 },
+      },
+      element: {
+        selector: "body > main > form.login-form > button#submit.primary.lg",
+        tag: "button",
+        id: "submit",
+        classes: ["primary", "lg"],
+        attributes: { type: "submit", "aria-label": "Submit form" },
+        boundingRect: { x: 100, y: 200, width: 120, height: 40 },
+        outerHTML: '<button id="submit" class="primary lg" type="submit">Submit</button>',
+        computedStyles: { display: "flex", width: "120px", height: "40px", color: "rgb(255, 255, 255)" },
+        accessibility: { role: "button", ariaLabel: "Submit form", tabIndex: 0 },
+        parentContext: '<form class="login-form"><!-- \u25B6 selected: button#submit.primary.lg --></form>',
+      },
+      elementScreenshotPath: "pagenab-app.example.com-2026-03-01_14-23-45-element.png",
+    })
+    const text = generateTextContent(input)
+    expect(text).toContain("## Selected Element")
+    expect(text).toContain("`button#submit.primary.lg`")
+    expect(text).toContain("### HTML")
+    expect(text).toContain('<button id="submit"')
+    expect(text).toContain("### Styles")
+    expect(text).toContain("display: flex")
+    expect(text).toContain("### Parent")
+    expect(text).toContain("login-form")
+  })
+
+  it("element section appears before Console", () => {
+    const input = makeBaseInput({
+      metadata: {
+        ...makeBaseInput().metadata,
+        captureMode: "element",
+        capturedData: ["element", "console"],
+        elementRect: { x: 10, y: 20, width: 100, height: 50 },
+      },
+      element: {
+        selector: "div.box",
+        tag: "div",
+        classes: ["box"],
+        attributes: {},
+        boundingRect: { x: 10, y: 20, width: 100, height: 50 },
+        outerHTML: '<div class="box">Hello</div>',
+        computedStyles: { display: "block" },
+        accessibility: {},
+      },
+      console: {
+        summary: { errors: 0, warnings: 0, logs: 0, info: 0 },
+        logs: [],
+      },
+    })
+    const text = generateTextContent(input)
+    const elementIndex = text.indexOf("## Selected Element")
+    const consoleIndex = text.indexOf("## Console")
+    expect(elementIndex).toBeGreaterThan(-1)
+    expect(consoleIndex).toBeGreaterThan(-1)
+    expect(elementIndex).toBeLessThan(consoleIndex)
+  })
+
+  it("shows element screenshot paths in element mode", () => {
+    const input = makeBaseInput({
+      metadata: {
+        ...makeBaseInput().metadata,
+        captureMode: "element",
+        capturedData: ["element"],
+        elementRect: { x: 10, y: 20, width: 100, height: 50 },
+      },
+      element: {
+        selector: "div.box",
+        tag: "div",
+        classes: ["box"],
+        attributes: {},
+        boundingRect: { x: 10, y: 20, width: 100, height: 50 },
+        outerHTML: '<div class="box">Hello</div>',
+        computedStyles: {},
+        accessibility: {},
+      },
+      elementScreenshotPath: "pagenab-app.example.com-2026-03-01_14-23-45-element.png",
+    })
+    const text = generateTextContent(input)
+    expect(text).toContain("Full page:")
+    expect(text).toContain("Element:")
+    expect(text).toContain("-element.png")
+  })
+
+  it("omits element section when not in capturedData", () => {
+    const text = generateTextContent(makeBaseInput())
+    expect(text).not.toContain("## Selected Element")
   })
 
   it("shows area screenshot paths when in area mode", () => {

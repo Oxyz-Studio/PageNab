@@ -2,6 +2,7 @@ import type {
   CaptureMetadata,
   ConsoleData,
   CookiesData,
+  ElementData,
   InteractionsData,
   NetworkData,
   PerformanceData,
@@ -13,6 +14,7 @@ export interface FormatInput {
   metadata: CaptureMetadata
   screenshotPath: string
   areaScreenshotPath?: string
+  elementScreenshotPath?: string
   console?: ConsoleData
   network?: NetworkData
   dom?: string
@@ -20,6 +22,7 @@ export interface FormatInput {
   storage?: StorageData
   interactions?: InteractionsData
   performance?: PerformanceData
+  element?: ElementData
 }
 
 function formatDate(iso: string): string {
@@ -34,7 +37,7 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(0)} MB`
 }
 
-function extractFile(source?: string): string {
+export function extractFile(source?: string): string {
   if (!source) return ""
   try {
     const url = new URL(source)
@@ -58,7 +61,7 @@ function formatTime(iso: string): string {
   return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
 }
 
-function extractPath(url: string): string {
+export function extractPath(url: string): string {
   try {
     const u = new URL(url)
     return u.pathname + u.search
@@ -104,6 +107,55 @@ export function generateTextContent(input: FormatInput): string {
   lines.push(`**Time:** ${formatDate(m.timestamp)}`)
   lines.push(`**Viewport:** ${m.viewport.width}x${m.viewport.height}`)
   lines.push(`**Language:** ${m.language}`)
+
+  // Selected Element (before Console — primary data in element mode)
+  if (captured.has("element") && input.element) {
+    const el = input.element
+    const tagDesc = `${el.tag}${el.id ? `#${el.id}` : ""}${el.classes.length > 0 ? `.${el.classes.join(".")}` : ""}`
+    lines.push("")
+    lines.push("## Selected Element")
+    lines.push("")
+    lines.push(`\`${tagDesc}\` in \`${el.selector}\``)
+
+    const sizeParts = [`Size: ${el.boundingRect.width}x${el.boundingRect.height}px at (${el.boundingRect.x}, ${el.boundingRect.y})`]
+    if (el.accessibility.role) sizeParts.push(`Role: ${el.accessibility.role}`)
+    if (el.accessibility.ariaLabel) sizeParts.push(`Label: "${el.accessibility.ariaLabel}"`)
+    lines.push(sizeParts.join(" | "))
+
+    lines.push("")
+    lines.push("### HTML")
+    lines.push("```html")
+    lines.push(el.outerHTML)
+    lines.push("```")
+
+    const styleEntries = Object.entries(el.computedStyles)
+    if (styleEntries.length > 0) {
+      lines.push("")
+      lines.push("### Styles")
+      lines.push("```")
+      // Group styles into lines of ~80 chars
+      let currentLine = ""
+      for (const [prop, val] of styleEntries) {
+        const entry = `${prop}: ${val}`
+        if (currentLine.length > 0 && currentLine.length + entry.length + 2 > 80) {
+          lines.push(currentLine)
+          currentLine = entry
+        } else {
+          currentLine = currentLine ? `${currentLine}; ${entry}` : entry
+        }
+      }
+      if (currentLine) lines.push(currentLine)
+      lines.push("```")
+    }
+
+    if (el.parentContext) {
+      lines.push("")
+      lines.push("### Parent")
+      lines.push("```html")
+      lines.push(el.parentContext)
+      lines.push("```")
+    }
+  }
 
   // Console
   if (captured.has("console") && input.console) {
@@ -269,7 +321,10 @@ export function generateTextContent(input: FormatInput): string {
   lines.push("")
   lines.push("## Screenshots")
   lines.push("")
-  if (m.captureMode === "area" && input.areaScreenshotPath) {
+  if (m.captureMode === "element" && input.elementScreenshotPath) {
+    lines.push(`- Full page: \`~/Downloads/${input.screenshotPath}\``)
+    lines.push(`- Element: \`~/Downloads/${input.elementScreenshotPath}\``)
+  } else if (m.captureMode === "area" && input.areaScreenshotPath) {
     lines.push(`- Full page: \`~/Downloads/${input.screenshotPath}\``)
     lines.push(`- Area: \`~/Downloads/${input.areaScreenshotPath}\``)
   } else {

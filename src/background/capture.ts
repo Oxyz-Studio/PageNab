@@ -8,6 +8,7 @@ import type {
   ClipboardMode,
   ConsoleData,
   CustomOptions,
+  ElementData,
   InteractionsData,
   Preset,
   Settings,
@@ -36,8 +37,10 @@ export async function capturePage(
   areaRect?: { x: number; y: number; width: number; height: number },
   /** When true, skip clipboard write (caller handles it — e.g. popup has user activation) */
   skipClipboard?: boolean,
-  /** When true, skip downloads (caller handles them — e.g. area capture defers after openPopup) */
+  /** When true, skip downloads (caller handles them — e.g. area/element capture defers after openPopup) */
   skipDownloads?: boolean,
+  /** Element data when mode is "element" */
+  elementData?: ElementData,
 ): Promise<CaptureResponse> {
   const startTime = Date.now()
 
@@ -124,6 +127,7 @@ export async function capturePage(
       (type) => collectorOptions[type] && collected?.[type],
     ) as string[]
     if (interactions) capturedData.push("interactions")
+    if (elementData) capturedData.push("element")
 
     const cssViewport = collected?.metadata.viewport ?? {
       width: tab.width ?? 0,
@@ -144,6 +148,7 @@ export async function capturePage(
       colorScheme: collected?.metadata.colorScheme ?? "light",
       captureMode: mode,
       areaRect: areaRect ?? null,
+      elementRect: elementData?.boundingRect ?? null,
       preset,
       capturedData,
       captureVersion: CAPTURE_VERSION,
@@ -156,6 +161,14 @@ export async function capturePage(
     if (mode === "area" && areaRect) {
       areaScreenshotDataUrl = await cropScreenshot(screenshotDataUrl, areaRect, cssViewport)
       areaFilename = generateScreenshotFilename(domain, true)
+    }
+
+    // Crop element screenshot if needed
+    let elementScreenshotDataUrl: string | undefined
+    let elementFilename: string | undefined
+    if (mode === "element" && areaRect) {
+      elementScreenshotDataUrl = await cropScreenshot(screenshotDataUrl, areaRect, cssViewport)
+      elementFilename = generateScreenshotFilename(domain, false, true)
     }
 
     const filename = generateScreenshotFilename(domain)
@@ -188,6 +201,9 @@ export async function capturePage(
     if (interactions) {
       stats.interactionsCount = interactions.summary.total
     }
+    if (elementData) {
+      stats.elementSelector = elementData.selector
+    }
 
     // Format text for clipboard
     // CollectorResult uses inline types (self-contained, no imports) — cast needed for
@@ -196,6 +212,7 @@ export async function capturePage(
       metadata,
       screenshotPath: filename,
       areaScreenshotPath: areaFilename,
+      elementScreenshotPath: elementFilename,
       console: collected?.console as ConsoleData | undefined,
       network: collected?.network,
       dom: collected?.dom,
@@ -203,8 +220,9 @@ export async function capturePage(
       storage: collected?.storage,
       performance: collected?.performance,
       interactions: interactions ?? undefined,
+      element: elementData,
     })
-    const clipboardImage = areaScreenshotDataUrl ?? screenshotDataUrl
+    const clipboardImage = elementScreenshotDataUrl ?? areaScreenshotDataUrl ?? screenshotDataUrl
 
     // Run downloads, clipboard, history, and notification in parallel
     const parallelTasks: Promise<unknown>[] = []
@@ -218,6 +236,15 @@ export async function capturePage(
           chrome.downloads.download({
             url: areaScreenshotDataUrl,
             filename: areaFilename,
+            saveAs: false,
+          }),
+        )
+      }
+      if (elementScreenshotDataUrl && elementFilename) {
+        parallelTasks.push(
+          chrome.downloads.download({
+            url: elementScreenshotDataUrl,
+            filename: elementFilename,
             saveAs: false,
           }),
         )
@@ -251,6 +278,10 @@ export async function capturePage(
         collected?.storage,
         interactions ?? undefined,
         collected?.performance,
+        areaScreenshotDataUrl,
+        elementData,
+        elementScreenshotDataUrl,
+        elementFilename,
       ).catch(() => {
         // History save failure is non-critical
       }),
@@ -281,14 +312,15 @@ export async function capturePage(
     ])
 
     const result: CaptureResult = {
-      screenshot: areaScreenshotDataUrl ?? screenshotDataUrl,
-      fullScreenshot: areaScreenshotDataUrl ? screenshotDataUrl : undefined,
+      screenshot: elementScreenshotDataUrl ?? areaScreenshotDataUrl ?? screenshotDataUrl,
+      fullScreenshot: (elementScreenshotDataUrl || areaScreenshotDataUrl) ? screenshotDataUrl : undefined,
       clipboardText: textContent,
       domain,
       url: tab.url,
       title: tab.title ?? "",
       screenshotPath: filename,
       areaScreenshotPath: areaFilename,
+      elementScreenshotPath: elementFilename,
       capturedData,
       stats,
     }

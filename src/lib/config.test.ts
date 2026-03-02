@@ -87,6 +87,11 @@ describe("generateScreenshotFilename", () => {
     expect(filename).toMatch(/^pagenab-example\.com-\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}-area\.png$/)
   })
 
+  it("appends -element suffix for element screenshots", () => {
+    const filename = generateScreenshotFilename("example.com", false, true)
+    expect(filename).toMatch(/^pagenab-example\.com-\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}-element\.png$/)
+  })
+
   it("includes the domain in the filename", () => {
     const filename = generateScreenshotFilename("my-app.dev")
     expect(filename).toContain("my-app.dev")

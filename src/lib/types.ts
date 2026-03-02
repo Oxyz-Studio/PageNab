@@ -1,6 +1,6 @@
 // === Presets ===
 export type Preset = "light" | "full" | "custom"
-export type CaptureMode = "fullpage" | "area"
+export type CaptureMode = "fullpage" | "area" | "element"
 
 export interface CustomOptions {
   console: boolean
@@ -39,6 +39,7 @@ export interface CaptureMetadata {
   colorScheme: "light" | "dark"
   captureMode: CaptureMode
   areaRect: { x: number; y: number; width: number; height: number } | null
+  elementRect: { x: number; y: number; width: number; height: number } | null
   preset: Preset
   capturedData: string[]
   captureVersion: string
@@ -149,10 +150,25 @@ export interface PerformanceData {
   memoryLimit?: number
 }
 
+// === Element ===
+export interface ElementData {
+  selector: string
+  tag: string
+  id?: string
+  classes: string[]
+  attributes: Record<string, string>
+  boundingRect: { x: number; y: number; width: number; height: number }
+  outerHTML: string
+  computedStyles: Record<string, string>
+  accessibility: { role?: string; ariaLabel?: string; tabIndex?: number }
+  parentContext?: string
+}
+
 // === Capture Bundle ===
 export interface CaptureBundle {
   screenshot: string
   areaScreenshot?: string
+  elementScreenshot?: string
   metadata: CaptureMetadata
   console?: ConsoleData
   network?: NetworkData
@@ -161,6 +177,7 @@ export interface CaptureBundle {
   storage?: StorageData
   interactions?: InteractionsData
   performance?: PerformanceData
+  element?: ElementData
 }
 
 // === Stored Capture ===
@@ -171,8 +188,11 @@ export interface StoredCapture {
   domain: string
   title: string
   screenshotThumbnail: string
+  areaScreenshotThumbnail?: string
+  elementScreenshotThumbnail?: string
   screenshotPath: string
   areaScreenshotPath?: string
+  elementScreenshotPath?: string
   preset: Preset
   capturedData: string[]
   captureMode: CaptureMode
@@ -184,6 +204,7 @@ export interface StoredCapture {
   storage?: StorageData
   interactions?: InteractionsData
   performance?: PerformanceData
+  element?: ElementData
 }
 
 // === Chrome Messages ===
@@ -199,6 +220,11 @@ export type PopupMessage =
   | { type: "UPDATE_INTERACTIONS_TRACKING"; enabled: boolean }
   | {
       type: "START_AREA_CAPTURE"
+      preset: Preset
+      customOptions?: CustomOptions
+    }
+  | {
+      type: "START_ELEMENT_CAPTURE"
       preset: Preset
       customOptions?: CustomOptions
     }
@@ -231,6 +257,7 @@ export interface CaptureResult {
   title: string
   screenshotPath: string
   areaScreenshotPath?: string
+  elementScreenshotPath?: string
   capturedData: string[]
   stats: CaptureStats
 }
@@ -245,4 +272,5 @@ export interface CaptureStats {
   storageKeys?: number
   lcpTime?: number
   interactionsCount?: number
+  elementSelector?: string
 }

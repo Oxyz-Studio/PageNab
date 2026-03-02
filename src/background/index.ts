@@ -1,5 +1,6 @@
 import { capturePage } from "./capture"
 import { startAreaCapture } from "./area"
+import { startElementCapture } from "./element"
 import { enableInteractionsTracking, disableInteractionsTracking } from "./interactions"
 import { getCaptures, deleteCapture, getStorageUsage } from "./history"
 import { DEFAULT_SETTINGS } from "../lib/config"
@@ -29,6 +30,8 @@ chrome.commands.onCommand.addListener(async (command) => {
 
     if (mode === "area") {
       await startAreaCapture(preset, customOptions)
+    } else if (mode === "element") {
+      await startElementCapture(preset, customOptions)
     } else {
       await capturePage(preset, mode, customOptions)
     }
@@ -45,6 +48,10 @@ chrome.runtime.onMessage.addListener(
 
       case "START_AREA_CAPTURE":
         startAreaCapture(msg.preset, msg.customOptions).then(sendResponse)
+        return true
+
+      case "START_ELEMENT_CAPTURE":
+        startElementCapture(msg.preset, msg.customOptions).then(sendResponse)
         return true
 
       case "UPDATE_INTERACTIONS_TRACKING": {

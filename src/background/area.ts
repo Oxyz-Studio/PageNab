@@ -48,8 +48,7 @@ export async function startAreaCapture(
       } catch {
         // openPopup not available — user can click the icon manually
       }
-      // Now trigger downloads — the popup is already open so the download bubble
-      // won't interfere with it
+      // Trigger downloads after popup is open
       try {
         const dlPromises: Promise<unknown>[] = [
           chrome.downloads.download({

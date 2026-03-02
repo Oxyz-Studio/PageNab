@@ -2,6 +2,7 @@ import type {
   CaptureMetadata,
   ConsoleData,
   CookiesData,
+  ElementData,
   InteractionsData,
   NetworkData,
   PerformanceData,
@@ -31,12 +32,18 @@ export async function saveCapture(
   storageData?: StorageData,
   interactionsData?: InteractionsData,
   performanceData?: PerformanceData,
+  areaScreenshot?: string,
+  elementData?: ElementData,
+  elementScreenshot?: string,
+  elementScreenshotPath?: string,
 ): Promise<StoredCapture> {
   const maxCaptures = await getMaxCaptures()
   const captures = await getCaptures()
 
   // Generate thumbnail (~50KB)
   const thumbnail = await generateThumbnail(screenshot)
+  const areaThumbnail = areaScreenshot ? await generateThumbnail(areaScreenshot) : undefined
+  const elementThumbnail = elementScreenshot ? await generateThumbnail(elementScreenshot) : undefined
 
   const stored: StoredCapture = {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -45,8 +52,11 @@ export async function saveCapture(
     domain: metadata.domain,
     title: metadata.title,
     screenshotThumbnail: thumbnail,
+    areaScreenshotThumbnail: areaThumbnail,
+    elementScreenshotThumbnail: elementThumbnail,
     screenshotPath,
     areaScreenshotPath,
+    elementScreenshotPath,
     preset: metadata.preset,
     capturedData: metadata.capturedData,
     captureMode: metadata.captureMode,
@@ -58,6 +68,7 @@ export async function saveCapture(
     storage: storageData,
     interactions: interactionsData,
     performance: performanceData,
+    element: elementData,
   }
 
   // Add to front, enforce limit

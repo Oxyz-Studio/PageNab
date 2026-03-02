@@ -16,7 +16,13 @@
       "Bash(python3:*)",
       "Bash(find:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "WebSearch",
+      "Bash(identify:*)",
+      "Bash(sips:*)",
+      "Bash(open -a \"Google Chrome\":*)",
+      "mcp__chrome-devtools__new_page",
+      "Bash(pkill:*)"
     ]
   }
 }
