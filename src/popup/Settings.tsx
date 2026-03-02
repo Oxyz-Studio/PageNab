@@ -14,7 +14,7 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
   useEffect(() => {
     chrome.runtime.sendMessage({ type: "GET_SETTINGS" }).then((s) => {
       setSettings(s as Settings)
-    })
+    }).catch(() => {})
   }, [])
 
   async function handleSave(updated: Settings) {

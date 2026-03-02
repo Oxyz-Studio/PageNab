@@ -1,9 +1,4 @@
 import { capturePage } from "./capture"
-
-// Hide Chrome's download bubble for all downloads initiated by this extension (Chrome 105+)
-chrome.downloads.setUiOptions({ enabled: false }).catch(() => {
-  // Not supported in older Chrome versions — download bubble will still show
-})
 import { startAreaCapture } from "./area"
 import { startElementCapture } from "./element"
 import { enableInteractionsTracking, disableInteractionsTracking } from "./interactions"

@@ -25,7 +25,10 @@
       "Bash(pkill:*)",
       "Bash(git stash:*)",
       "Bash(git stash pop:*)",
-      "WebFetch(domain:developer.chrome.com)"
+      "WebFetch(domain:developer.chrome.com)",
+      "WebFetch(domain:support.google.com)",
+      "WebFetch(domain:www.computerhope.com)",
+      "WebFetch(domain:keycombiner.com)"
     ]
   }
 }

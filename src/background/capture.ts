@@ -224,31 +224,44 @@ export async function capturePage(
     })
     const clipboardImage = elementScreenshotDataUrl ?? areaScreenshotDataUrl ?? screenshotDataUrl
 
-    // Run downloads, clipboard, history, and notification in parallel
+    // Run downloads (with UI suppression), clipboard, history, and notification in parallel
     const parallelTasks: Promise<unknown>[] = []
 
     if (!skipDownloads) {
       parallelTasks.push(
-        chrome.downloads.download({ url: screenshotDataUrl, filename, saveAs: false }),
+        (async () => {
+          // Temporarily hide Chrome's download bubble during capture (Chrome 105+)
+          await chrome.downloads.setUiOptions({ enabled: false }).catch(() => {})
+          try {
+            const downloadTasks: Promise<unknown>[] = []
+            downloadTasks.push(
+              chrome.downloads.download({ url: screenshotDataUrl, filename, saveAs: false }),
+            )
+            if (areaScreenshotDataUrl && areaFilename) {
+              downloadTasks.push(
+                chrome.downloads.download({
+                  url: areaScreenshotDataUrl,
+                  filename: areaFilename,
+                  saveAs: false,
+                }),
+              )
+            }
+            if (elementScreenshotDataUrl && elementFilename) {
+              downloadTasks.push(
+                chrome.downloads.download({
+                  url: elementScreenshotDataUrl,
+                  filename: elementFilename,
+                  saveAs: false,
+                }),
+              )
+            }
+            await Promise.all(downloadTasks)
+          } finally {
+            // Always restore Chrome's download bubble
+            chrome.downloads.setUiOptions({ enabled: true }).catch(() => {})
+          }
+        })(),
       )
-      if (areaScreenshotDataUrl && areaFilename) {
-        parallelTasks.push(
-          chrome.downloads.download({
-            url: areaScreenshotDataUrl,
-            filename: areaFilename,
-            saveAs: false,
-          }),
-        )
-      }
-      if (elementScreenshotDataUrl && elementFilename) {
-        parallelTasks.push(
-          chrome.downloads.download({
-            url: elementScreenshotDataUrl,
-            filename: elementFilename,
-            saveAs: false,
-          }),
-        )
-      }
     }
 
     // Only write clipboard from background when not handled by caller (e.g. keyboard shortcut)

@@ -21,6 +21,7 @@ import { Checkbox } from "./components/Checkbox"
 import { Header } from "./components/Header"
 import { LoadingSpinner } from "./components/LoadingSpinner"
 import { StateBadge } from "./components/StateBadge"
+import { ErrorBoundary } from "./components/ErrorBoundary"
 import "../style.css"
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -50,12 +51,6 @@ const stateVariants = {
 }
 
 // ─── Preset metadata ─────────────────────────────────────────────────────────
-
-const PRESET_DOT: Record<string, string> = {
-  light: "#10b981",
-  full: "#f59e0b",
-  custom: "#9ca3af",
-}
 
 const PRESET_HINT: Record<string, string> = {
   light: "Errors, warnings, failed requests, interactions",
@@ -108,7 +103,7 @@ function IndexPopup() {
       setMode(settings.screenshotMode ?? DEFAULT_SETTINGS.screenshotMode)
       setCustomOptions(settings.customOptions ?? { ...DEFAULT_SETTINGS.customOptions })
       setClipboardMode(settings.clipboardMode ?? DEFAULT_SETTINGS.clipboardMode)
-    })
+    }).catch(() => {})
 
     chrome.storage.session
       ?.get(["pagenab_area_result", "pagenab_element_result"])
@@ -192,8 +187,9 @@ function IndexPopup() {
   }
 
   return (
+    <ErrorBoundary>
     <div className="relative w-[360px] overflow-hidden bg-[var(--bg-primary)]">
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="wait" initial={false}>
         {screen === "history" && (
           <motion.div
             key="history"
@@ -235,7 +231,7 @@ function IndexPopup() {
             />
 
             <div className="px-5 pb-6 pt-5">
-              <AnimatePresence mode="wait">
+              <AnimatePresence mode="wait" initial={false}>
                 {state.status === "idle" && (
                   <motion.div
                     key="idle"
@@ -308,6 +304,7 @@ function IndexPopup() {
         )}
       </AnimatePresence>
     </div>
+    </ErrorBoundary>
   )
 }
 
@@ -378,19 +375,15 @@ function IdleView({
       </div>
 
       {/* Preset hint */}
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="wait" initial={false}>
         <motion.p
           key={preset}
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -4 }}
           transition={{ duration: 0.12 }}
-          className="flex items-center gap-1.5 text-[11px] leading-relaxed -mt-1 text-[var(--text-secondary)]"
+          className="text-[11px] leading-relaxed -mt-1 text-[var(--text-secondary)]"
         >
-          <span
-            className="inline-block h-1.5 w-1.5 flex-shrink-0 rounded-full"
-            style={{ background: PRESET_DOT[preset] }}
-          />
           {PRESET_HINT[preset]}
         </motion.p>
       </AnimatePresence>
