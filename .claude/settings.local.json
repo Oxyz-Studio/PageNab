@@ -14,7 +14,9 @@
       "Bash(npx prettier:*)",
       "Bash(npx plasmo build:*)",
       "Bash(python3:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }

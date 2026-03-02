@@ -13,10 +13,13 @@ export interface CustomOptions {
 }
 
 // === Settings ===
+export type ClipboardMode = "text" | "image" | "both"
+
 export interface Settings {
   preset: Preset
   customOptions: CustomOptions
   screenshotMode: CaptureMode
+  clipboardMode: ClipboardMode
   notifications: boolean
   maxCaptures: number
   shortcut: string
@@ -68,6 +71,7 @@ export interface NetworkRequest {
   statusText: string
   type: string
   duration: number
+  size?: number
   timestamp: string
   requestHeaders: Record<string, string>
   responseHeaders: Record<string, string>
@@ -220,6 +224,7 @@ export type CaptureResponse =
 
 export interface CaptureResult {
   screenshot: string
+  fullScreenshot?: string
   clipboardText: string
   domain: string
   url: string

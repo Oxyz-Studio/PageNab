@@ -304,6 +304,7 @@ describe("generateTextContent", () => {
             statusText: "OK",
             type: "script",
             duration: 45,
+            size: 125400,
             timestamp: "2026-03-01T14:23:42.000Z",
             requestHeaders: {},
             responseHeaders: {},
@@ -324,6 +325,7 @@ describe("generateTextContent", () => {
             statusText: "OK",
             type: "link",
             duration: 30,
+            size: 2048,
             timestamp: "2026-03-01T14:23:42.000Z",
             requestHeaders: {},
             responseHeaders: {},
@@ -334,9 +336,9 @@ describe("generateTextContent", () => {
     const text = generateTextContent(input)
     expect(text).toContain("4 requests, 1 failed, 1 slow")
     expect(text).toContain("**FAIL** `/users` → 500")
-    expect(text).toContain("`/app.js` → 200 (45ms, script)")
+    expect(text).toContain("`/app.js` → 200 (45ms, 122.5 KB, script)")
     expect(text).toContain("**SLOW** `/heavy` → 200 (3200ms, xhr)")
-    expect(text).toContain("`/style.css` → 200 (30ms, link)")
+    expect(text).toContain("`/style.css` → 200 (30ms, 2.0 KB, link)")
     // Should NOT show "No failed requests."
     expect(text).not.toContain("No failed requests.")
   })
@@ -455,7 +457,7 @@ describe("generateTextContent", () => {
     })
     const text = generateTextContent(input)
     expect(text).toContain("## Interactions")
-    expect(text).toContain("3 events (last 3)")
+    expect(text).toContain("3 events")
     expect(text).toContain('[click] button.submit "Submit"')
     expect(text).toContain("[scroll] down 450px")
     expect(text).toContain("[input] input#search ***")

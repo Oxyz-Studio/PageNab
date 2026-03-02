@@ -40,6 +40,7 @@ export interface CollectorResult {
       statusText: string
       type: string
       duration: number
+      size: number
       timestamp: string
       requestHeaders: Record<string, string>
       responseHeaders: Record<string, string>
@@ -51,6 +52,19 @@ export interface CollectorResult {
       statusText: string
       type: string
       duration: number
+      size: number
+      timestamp: string
+      requestHeaders: Record<string, string>
+      responseHeaders: Record<string, string>
+      initiator?: string
+    }>
+    all?: Array<{
+      url: string
+      status: number
+      statusText: string
+      type: string
+      duration: number
+      size: number
       timestamp: string
       requestHeaders: Record<string, string>
       responseHeaders: Record<string, string>
@@ -103,33 +117,43 @@ export function collectPageData(options: CollectorOptions): CollectorResult {
   const result: CollectorResult = { metadata }
 
   // === Console ===
+  // Reads from the persistent console buffer set by src/contents/console-capture.ts
+  // (MAIN world content script that patches console from document_start).
   if (options.console) {
     type LogEntry = NonNullable<CollectorResult["console"]>["logs"][number]
-    const logs: LogEntry[] = []
+
+    const consoleBuffer = (
+      window as unknown as Record<string, unknown>
+    ).__pagenab_console_buffer as
+      | Array<{
+          level: string
+          message: string
+          source?: string
+          line?: number
+          column?: number
+          stack?: string
+          timestamp: string
+        }>
+      | undefined
+
+    const rawLogs: LogEntry[] = (consoleBuffer ?? []).map((entry) => ({
+      level: entry.level,
+      message: entry.message,
+      source: entry.source,
+      line: entry.line,
+      column: entry.column,
+      stack: entry.stack,
+      timestamp: entry.timestamp,
+    }))
+
+    const filteredLogs =
+      options.consoleFilter === "errors-warnings"
+        ? rawLogs.filter((l) => l.level === "error" || l.level === "warning")
+        : rawLogs
+
     const summary = { errors: 0, warnings: 0, logs: 0, info: 0 }
-
-    const origError = console.error
-    const origWarn = console.warn
-    const origLog = console.log
-    const origInfo = console.info
-
-    function formatArgs(args: unknown[]): string {
-      return args
-        .map((a) => {
-          if (typeof a === "string") return a
-          try {
-            return JSON.stringify(a)
-          } catch {
-            return String(a)
-          }
-        })
-        .join(" ")
-    }
-
-    function pushLog(level: string, args: unknown[]) {
-      if (logs.length >= 100) return
-      logs.push({ level, message: formatArgs(args), timestamp: new Date().toISOString() })
-      switch (level) {
+    for (const l of filteredLogs) {
+      switch (l.level) {
         case "error":
           summary.errors++
           break
@@ -145,86 +169,7 @@ export function collectPageData(options: CollectorOptions): CollectorResult {
       }
     }
 
-    console.error = (...args: unknown[]) => {
-      pushLog("error", args)
-      origError.apply(console, args)
-    }
-    console.warn = (...args: unknown[]) => {
-      pushLog("warning", args)
-      origWarn.apply(console, args)
-    }
-    if (options.consoleFilter === "all") {
-      console.log = (...args: unknown[]) => {
-        pushLog("log", args)
-        origLog.apply(console, args)
-      }
-      console.info = (...args: unknown[]) => {
-        pushLog("info", args)
-        origInfo.apply(console, args)
-      }
-    }
-
-    const errorHandler = (e: ErrorEvent) => {
-      if (logs.length >= 100) return
-      logs.push({
-        level: "error",
-        message: e.message || String(e.error),
-        source: e.filename,
-        line: e.lineno,
-        column: e.colno,
-        stack: e.error?.stack,
-        timestamp: new Date().toISOString(),
-      })
-      summary.errors++
-    }
-    const rejectionHandler = (e: PromiseRejectionEvent) => {
-      if (logs.length >= 100) return
-      const msg = e.reason instanceof Error ? e.reason.message : String(e.reason)
-      const stack = e.reason instanceof Error ? e.reason.stack : undefined
-      logs.push({
-        level: "error",
-        message: `Unhandled rejection: ${msg}`,
-        stack,
-        timestamp: new Date().toISOString(),
-      })
-      summary.errors++
-    }
-
-    window.addEventListener("error", errorHandler)
-    window.addEventListener("unhandledrejection", rejectionHandler)
-
-    const filteredLogs =
-      options.consoleFilter === "errors-warnings"
-        ? logs.filter((l) => l.level === "error" || l.level === "warning")
-        : logs
-
-    // Recompute summary from the filtered logs so counts match content
-    const filteredSummary = { errors: 0, warnings: 0, logs: 0, info: 0 }
-    for (const l of filteredLogs) {
-      switch (l.level) {
-        case "error":
-          filteredSummary.errors++
-          break
-        case "warning":
-          filteredSummary.warnings++
-          break
-        case "log":
-          filteredSummary.logs++
-          break
-        case "info":
-          filteredSummary.info++
-          break
-      }
-    }
-
-    result.console = { summary: filteredSummary, logs: filteredLogs }
-
-    console.error = origError
-    console.warn = origWarn
-    console.log = origLog
-    console.info = origInfo
-    window.removeEventListener("error", errorHandler)
-    window.removeEventListener("unhandledrejection", rejectionHandler)
+    result.console = { summary, logs: filteredLogs }
   }
 
   // === Network ===
@@ -237,6 +182,7 @@ export function collectPageData(options: CollectorOptions): CollectorResult {
       statusText: string
       type: string
       duration: number
+      size: number
       timestamp: string
       requestHeaders: Record<string, string>
       responseHeaders: Record<string, string>
@@ -246,14 +192,28 @@ export function collectPageData(options: CollectorOptions): CollectorResult {
     const failed: NetEntry[] = []
     const slow: NetEntry[] = []
     const all: NetEntry[] = []
-    const total = entries.length
+    let total = 0
 
     for (const entry of entries) {
+      // Skip entries with empty or opaque URLs (cross-origin sub-resources like CSS background-images)
+      if (!entry.name || entry.name === "about:blank") continue
+
       const status =
         "responseStatus" in entry
           ? (entry as PerformanceResourceTiming & { responseStatus: number }).responseStatus
           : 0
+
+      // Skip entries with no status info (cross-origin opaque responses) for the all array
+      // but still count them toward total
+      total++
+      if (status === 0 && options.networkFilter === "all") {
+        // Only include in `all` if we have meaningful data
+        // status 0 means opaque/cross-origin — skip from detailed list
+        continue
+      }
+
       const duration = Math.round(entry.duration)
+      const size = Math.round(entry.transferSize || 0)
       const ts = new Date(performance.timeOrigin + entry.startTime).toISOString()
 
       const isFailed = status >= 400
@@ -265,6 +225,7 @@ export function collectPageData(options: CollectorOptions): CollectorResult {
         statusText: `HTTP ${status}`,
         type: entry.initiatorType,
         duration,
+        size,
         timestamp: ts,
         requestHeaders: {},
         responseHeaders: {},

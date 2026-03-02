@@ -75,6 +75,19 @@ export async function capturePage(
       networkFilter: preset === "light" ? "failed" : "all",
     }
 
+    // Ensure console patcher is installed (fallback for CSP-protected pages or stale tabs)
+    if (collectorOptions.console) {
+      try {
+        await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          func: ensureConsolePatcher,
+          world: "MAIN" as chrome.scripting.ExecutionWorld,
+        })
+      } catch {
+        // Injection may fail on restricted pages — continue without console
+      }
+    }
+
     let collected: CollectorResult | null = null
     try {
       const injectionResults = await chrome.scripting.executeScript({
@@ -285,4 +298,74 @@ export async function capturePage(
     const message = err instanceof Error ? err.message : "Unknown capture error"
     return { success: false, error: message }
   }
+}
+
+/**
+ * Fallback console patcher — injected via executeScript({world: "MAIN"}) before collector.
+ * Idempotent: no-op if __pagenab_console_buffer already exists (set by persistent content script).
+ * Self-contained with zero imports (serialized for executeScript({func})).
+ */
+function ensureConsolePatcher(): void {
+  if ((window as unknown as Record<string, unknown>).__pagenab_console_buffer) return
+  const buffer: Array<Record<string, unknown>> = []
+  const MAX = 200
+  function fmt(args: ArrayLike<unknown>): string {
+    return Array.prototype.slice
+      .call(args)
+      .map((x: unknown) => {
+        if (typeof x === "string") return x
+        try {
+          return JSON.stringify(x)
+        } catch {
+          return String(x)
+        }
+      })
+      .join(" ")
+  }
+  function push(e: Record<string, unknown>) {
+    if (buffer.length >= MAX) buffer.shift()
+    buffer.push(e)
+  }
+  const origError = console.error
+  const origWarn = console.warn
+  const origLog = console.log
+  const origInfo = console.info
+  console.error = function (...args: unknown[]) {
+    push({ level: "error", message: fmt(args), timestamp: new Date().toISOString() })
+    origError.apply(console, args)
+  }
+  console.warn = function (...args: unknown[]) {
+    push({ level: "warning", message: fmt(args), timestamp: new Date().toISOString() })
+    origWarn.apply(console, args)
+  }
+  console.log = function (...args: unknown[]) {
+    push({ level: "log", message: fmt(args), timestamp: new Date().toISOString() })
+    origLog.apply(console, args)
+  }
+  console.info = function (...args: unknown[]) {
+    push({ level: "info", message: fmt(args), timestamp: new Date().toISOString() })
+    origInfo.apply(console, args)
+  }
+  window.addEventListener("error", (e) => {
+    push({
+      level: "error",
+      message: e.message || String(e.error),
+      source: e.filename,
+      line: e.lineno,
+      column: e.colno,
+      stack: (e.error as Error)?.stack,
+      timestamp: new Date().toISOString(),
+    })
+  })
+  window.addEventListener("unhandledrejection", (e) => {
+    const msg = e.reason instanceof Error ? e.reason.message : String(e.reason)
+    const stack = e.reason instanceof Error ? e.reason.stack : undefined
+    push({
+      level: "error",
+      message: `Unhandled rejection: ${msg}`,
+      stack,
+      timestamp: new Date().toISOString(),
+    })
+  })
+  ;(window as unknown as Record<string, unknown>).__pagenab_console_buffer = buffer
 }

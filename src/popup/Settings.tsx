@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 
 import { DEFAULT_SETTINGS } from "../lib/config"
-import type { Settings } from "../lib/types"
+import type { ClipboardMode, Settings } from "../lib/types"
 
 export function SettingsScreen({ onBack }: { onBack: () => void }) {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS)
@@ -77,6 +77,36 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
               }`}
             />
           </button>
+        </div>
+
+        {/* Clipboard mode */}
+        <div>
+          <label className="mb-1 block text-xs font-medium text-neutral-500">Clipboard</label>
+          <div className="space-y-1.5">
+            {(
+              [
+                ["text", "Text only", "Best for AI assistants. Screenshot saved to Downloads."],
+                ["image", "Image only", "Pastes the screenshot. Text data in Downloads."],
+                ["both", "Both", "May not work in all apps (some only read one format)."],
+              ] as const
+            ).map(([value, label, desc]) => (
+              <label key={value} className="flex items-start gap-2">
+                <input
+                  type="radio"
+                  name="clipboardMode"
+                  checked={(settings.clipboardMode ?? DEFAULT_SETTINGS.clipboardMode) === value}
+                  onChange={() =>
+                    handleSave({ ...settings, clipboardMode: value as ClipboardMode })
+                  }
+                  className="mt-0.5 h-3.5 w-3.5 border-neutral-300 text-neutral-900 focus:ring-neutral-500"
+                />
+                <div>
+                  <span className="text-sm text-neutral-700">{label}</span>
+                  <p className="text-[10px] leading-snug text-neutral-400">{desc}</p>
+                </div>
+              </label>
+            ))}
+          </div>
         </div>
 
         {/* Max captures */}

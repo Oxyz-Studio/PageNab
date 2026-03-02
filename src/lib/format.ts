@@ -174,7 +174,8 @@ export function generateTextContent(input: FormatInput): string {
         const isFailed = req.status >= 400
         const isSlow = !isFailed && req.duration > 3000
         const prefix = isFailed ? "**FAIL** " : isSlow ? "**SLOW** " : ""
-        lines.push(`- ${prefix}\`${path}\` → ${req.status} (${req.duration}ms, ${req.type})`)
+        const sizeStr = req.size && req.size > 0 ? `, ${formatBytes(req.size)}` : ""
+        lines.push(`- ${prefix}\`${path}\` → ${req.status} (${req.duration}ms${sizeStr}, ${req.type})`)
       }
       if (input.network.all.length > 50) {
         lines.push(`- ... and ${input.network.all.length - 50} more`)
@@ -254,12 +255,12 @@ export function generateTextContent(input: FormatInput): string {
   // Interactions
   if (captured.has("interactions") && input.interactions) {
     lines.push("")
-    const recentEvents = input.interactions.events.slice(-5)
     lines.push("## Interactions")
     lines.push("")
-    lines.push(`${input.interactions.summary.total} events (last ${recentEvents.length})`)
+    const allEvents = input.interactions.events
+    lines.push(`${input.interactions.summary.total} events`)
     lines.push("")
-    for (const event of recentEvents) {
+    for (const event of allEvents) {
       lines.push(`- [${event.type}] ${formatInteraction(event)}`)
     }
   }

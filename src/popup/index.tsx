@@ -1,12 +1,14 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 import { DEFAULT_SETTINGS } from "../lib/config"
 import type {
   CaptureMode,
   CaptureResponse,
   CaptureResult,
+  ClipboardMode,
   CustomOptions,
   Preset,
+  Settings,
 } from "../lib/types"
 import { HistoryScreen } from "./History"
 import { SettingsScreen } from "./Settings"
@@ -28,6 +30,33 @@ function IndexPopup() {
   const [customOptions, setCustomOptions] = useState<CustomOptions>({
     ...DEFAULT_SETTINGS.customOptions,
   })
+  const [clipboardMode, setClipboardMode] = useState<ClipboardMode>(
+    DEFAULT_SETTINGS.clipboardMode,
+  )
+
+  // Load settings + check for stored area capture result
+  useEffect(() => {
+    chrome.runtime.sendMessage({ type: "GET_SETTINGS" }).then((s) => {
+      const settings = s as Settings
+      setClipboardMode(settings.clipboardMode ?? DEFAULT_SETTINGS.clipboardMode)
+    })
+
+    chrome.storage.session
+      ?.get("pagenab_area_result")
+      .then((result) => {
+        const stored = result?.pagenab_area_result as
+          | { data: CaptureResult; timestamp: number }
+          | undefined
+        if (stored && Date.now() - stored.timestamp < 60000) {
+          setState({ status: "success", result: stored.data })
+        }
+        // Clear stored result regardless of age
+        chrome.storage.session.remove("pagenab_area_result")
+      })
+      .catch(() => {
+        // session storage not available
+      })
+  }, [])
 
   const handleCapture = async () => {
     if (mode === "area") {
@@ -54,14 +83,15 @@ function IndexPopup() {
       if (response.success) {
         // Write clipboard from popup — has user activation from click + focus
         try {
-          const imgResp = await fetch(response.data.screenshot)
-          const imageBlob = await imgResp.blob()
-          await navigator.clipboard.write([
-            new ClipboardItem({
-              "text/plain": new Blob([response.data.clipboardText], { type: "text/plain" }),
-              "image/png": imageBlob,
-            }),
-          ])
+          const items: Record<string, Blob> = {}
+          if (clipboardMode === "text" || clipboardMode === "both") {
+            items["text/plain"] = new Blob([response.data.clipboardText], { type: "text/plain" })
+          }
+          if (clipboardMode === "image" || clipboardMode === "both") {
+            const imgResp = await fetch(response.data.screenshot)
+            items["image/png"] = await imgResp.blob()
+          }
+          await navigator.clipboard.write([new ClipboardItem(items)])
         } catch {
           // Clipboard write failed — data still saved to downloads + history
         }
@@ -132,7 +162,11 @@ function IndexPopup() {
         )}
         {state.status === "capturing" && <CapturingView />}
         {state.status === "success" && (
-          <SuccessView result={state.result} onCapture={handleCapture} />
+          <SuccessView
+            result={state.result}
+            clipboardMode={clipboardMode}
+            onCapture={handleCapture}
+          />
         )}
         {state.status === "error" && <ErrorView message={state.message} onRetry={handleCapture} />}
       </div>
@@ -263,12 +297,56 @@ function CapturingView() {
 
 // === Success View ===
 
-function SuccessView({ result, onCapture }: { result: CaptureResult; onCapture: () => void }) {
+function SuccessView({
+  result,
+  clipboardMode,
+  onCapture,
+}: {
+  result: CaptureResult
+  clipboardMode: ClipboardMode
+  onCapture: () => void
+}) {
   const statsLine = buildStatsLine(result)
+  const [copiedBtn, setCopiedBtn] = useState<string | null>(null)
+
+  const successLabel =
+    clipboardMode === "text"
+      ? "Captured! Text copied."
+      : clipboardMode === "image"
+        ? "Captured! Screenshot copied."
+        : "Captured! Copied."
+
+  const handleCopyText = async () => {
+    try {
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          "text/plain": new Blob([result.clipboardText], { type: "text/plain" }),
+        }),
+      ])
+      setCopiedBtn("text")
+      setTimeout(() => setCopiedBtn(null), 1500)
+    } catch {
+      // Clipboard write failed
+    }
+  }
+
+  const handleCopyScreenshot = async (dataUrl: string, key: string) => {
+    try {
+      const resp = await fetch(dataUrl)
+      const blob = await resp.blob()
+      await navigator.clipboard.write([
+        new ClipboardItem({ "image/png": blob }),
+      ])
+      setCopiedBtn(key)
+      setTimeout(() => setCopiedBtn(null), 1500)
+    } catch {
+      // Clipboard write failed
+    }
+  }
 
   return (
     <>
-      <p className="mb-3 text-sm font-medium text-green-600">&#10003; Screenshot captured!</p>
+      <p className="mb-3 text-sm font-medium text-green-600">&#10003; {successLabel}</p>
 
       {/* Thumbnail */}
       <div className="overflow-hidden rounded-lg border border-neutral-200">
@@ -282,10 +360,42 @@ function SuccessView({ result, onCapture }: { result: CaptureResult; onCapture: 
       <p className="mt-2 truncate text-sm font-medium text-neutral-700">{result.domain}</p>
       {statsLine && <p className="text-xs text-neutral-500">{statsLine}</p>}
 
+      {/* Copy buttons */}
+      <div className="mt-3 flex gap-2">
+        <button
+          type="button"
+          onClick={handleCopyText}
+          disabled={copiedBtn === "text"}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-neutral-200 py-1.5 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 disabled:opacity-50"
+        >
+          {copiedBtn === "text" ? "Copied!" : "\uD83D\uDCCB Copy text"}
+        </button>
+        <button
+          type="button"
+          onClick={() => handleCopyScreenshot(result.screenshot, "screenshot")}
+          disabled={copiedBtn === "screenshot"}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-neutral-200 py-1.5 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 disabled:opacity-50"
+        >
+          {copiedBtn === "screenshot" ? "Copied!" : "\uD83D\uDDBC Copy screenshot"}
+        </button>
+      </div>
+
+      {/* Full page screenshot button (area mode only) */}
+      {result.fullScreenshot && (
+        <button
+          type="button"
+          onClick={() => handleCopyScreenshot(result.fullScreenshot!, "full")}
+          disabled={copiedBtn === "full"}
+          className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-neutral-200 py-1.5 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 disabled:opacity-50"
+        >
+          {copiedBtn === "full" ? "Copied!" : "\uD83D\uDDBC Copy full page screenshot"}
+        </button>
+      )}
+
       <button
         type="button"
         onClick={onCapture}
-        className="mt-4 w-full rounded-lg bg-neutral-900 py-2.5 text-sm font-medium text-white transition-colors hover:bg-neutral-800 active:bg-neutral-950"
+        className="mt-3 w-full rounded-lg bg-neutral-900 py-2.5 text-sm font-medium text-white transition-colors hover:bg-neutral-800 active:bg-neutral-950"
       >
         Nab again
       </button>
