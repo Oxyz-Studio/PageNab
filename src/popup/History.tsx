@@ -35,6 +35,17 @@ const DATA_BADGES: Record<string, string> = {
   element: "Element",
 }
 
+const BADGE_STYLES: Record<string, { background: string; color: string }> = {
+  console:      { background: "#fef3c7", color: "#b45309" },
+  network:      { background: "#dbeafe", color: "#1d4ed8" },
+  dom:          { background: "#ede9fe", color: "#6d28d9" },
+  cookies:      { background: "#fce7f3", color: "#9d174d" },
+  storage:      { background: "#d1fae5", color: "#065f46" },
+  performance:  { background: "#ffedd5", color: "#c2410c" },
+  interactions: { background: "#cffafe", color: "#0e7490" },
+  element:      { background: "#e0e7ff", color: "#3730a3" },
+}
+
 function buildFormatInput(capture: StoredCapture): FormatInput {
   return {
     metadata: capture.metadata,
@@ -100,26 +111,23 @@ export function HistoryScreen({ onBack }: { onBack: () => void }) {
   }
 
   return (
-    <div style={{ background: "var(--neu-base)" }}>
+    <div className="bg-[var(--bg-primary)]">
       <Header showBack onBack={onBack} title="History" />
 
-      <div className="neu-scroll max-h-[420px] overflow-y-auto px-4 py-3">
+      <div className="scroll-area max-h-[420px] overflow-y-auto px-4 py-3">
         {captures.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-14">
-            <div
-              className="mb-4 flex h-14 w-14 items-center justify-center rounded-full"
-              style={{ background: "var(--neu-base)", boxShadow: "var(--shadow-raised-sm)" }}
-            >
-              <Image size={22} style={{ color: "var(--neu-text2)", opacity: 0.45 }} />
+            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl border border-[var(--border-primary)] bg-[var(--bg-secondary)]">
+              <Image size={22} className="text-[var(--text-tertiary)]" />
             </div>
-            <p className="text-sm font-semibold" style={{ color: "var(--neu-text2)" }}>No captures yet</p>
-            <p className="mt-1 text-[11px]" style={{ color: "var(--neu-text2)", opacity: 0.6 }}>Nab a page to get started</p>
+            <p className="text-sm font-semibold text-[var(--text-secondary)]">No captures yet</p>
+            <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">Nab a page to get started</p>
           </div>
         ) : (
           <motion.div
             initial="hidden"
             animate="visible"
-            variants={{ visible: { transition: { staggerChildren: 0.055 } } }}
+            variants={{ visible: { transition: { staggerChildren: 0.03 } } }}
             className="flex flex-col gap-3"
           >
             {captures.map((capture) => (
@@ -138,10 +146,7 @@ export function HistoryScreen({ onBack }: { onBack: () => void }) {
         )}
       </div>
 
-      <div
-        className="px-4 py-2.5 text-center text-[11px]"
-        style={{ color: "var(--neu-text2)", borderTop: "1px solid rgba(163,177,198,0.38)", opacity: 0.85 }}
-      >
+      <div className="border-t border-[var(--border-primary)] px-4 py-2.5 text-center text-[11px] text-[var(--text-tertiary)]">
         {captures.length} capture{captures.length !== 1 ? "s" : ""} · {formatBytes(storageUsage)} used
       </div>
     </div>
@@ -163,34 +168,39 @@ function CaptureCard({
     <motion.div
       variants={{
         hidden: { opacity: 0, y: 16 },
-        visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 28 } },
+        visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 500, damping: 28 } },
       }}
-      className="rounded-2xl p-3"
-      style={{ background: "var(--neu-base)", boxShadow: "var(--shadow-raised-sm)" }}
+      className="rounded-xl border border-[var(--border-primary)] bg-[var(--bg-primary)] p-3"
     >
       {/* Thumbnail + meta */}
       <div className="flex gap-2.5">
-        <div
-          className="h-14 w-20 flex-shrink-0 overflow-hidden rounded-xl"
-          style={{ boxShadow: "var(--shadow-inset-sm)" }}
-        >
+        <div className="h-14 w-20 flex-shrink-0 overflow-hidden rounded-lg border border-[var(--border-primary)]">
           <img src={capture.screenshotThumbnail} alt="" className="h-full w-full object-cover object-top" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold" style={{ color: "var(--neu-text1)" }}>{capture.domain}</p>
-          <p className="mt-0.5 text-[11px]" style={{ color: "var(--neu-text2)" }}>
+          <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{capture.domain}</p>
+          <p className="mt-0.5 text-[11px] text-[var(--text-secondary)]">
             {formatTimeAgo(capture.timestamp)} · {capture.preset}
           </p>
           <div className="mt-1.5 flex flex-wrap gap-1">
-            {capture.capturedData.map((type) => (
-              <span
-                key={type}
-                className="rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide"
-                style={{ background: "var(--neu-base)", boxShadow: "var(--shadow-inset-sm)", color: "var(--neu-text2)" }}
-              >
-                {DATA_BADGES[type] ?? type}
-              </span>
-            ))}
+            {capture.capturedData.map((type) => {
+              const badgeStyle = BADGE_STYLES[type]
+              return (
+                <span
+                  key={type}
+                  className="rounded-md px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide"
+                  style={
+                    badgeStyle ?? {
+                      background: "var(--bg-secondary)",
+                      color: "var(--text-secondary)",
+                      border: "1px solid var(--border-primary)",
+                    }
+                  }
+                >
+                  {DATA_BADGES[type] ?? type}
+                </span>
+              )
+            })}
           </div>
         </div>
       </div>
@@ -233,31 +243,25 @@ function CaptureCard({
         <div className="flex-1" />
 
         {/* Details */}
-        <motion.button
+        <button
           type="button"
           onClick={onToggleExpand}
-          whileTap={{ scale: 0.88 }}
-          transition={{ type: "spring", stiffness: 420, damping: 28 }}
-          className="flex items-center gap-0.5 rounded-full px-2.5 py-1 text-[11px] font-semibold outline-none"
-          style={{ color: "var(--neu-accent)", background: "var(--neu-base)", boxShadow: "var(--shadow-raised-sm)" }}
+          className="flex items-center gap-0.5 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-secondary)] px-2.5 py-1 text-[11px] font-semibold text-[var(--accent)] outline-none transition-colors duration-150 hover:bg-[var(--bg-tertiary)] active:scale-[0.98]"
         >
           <motion.span animate={{ rotate: expanded ? 90 : 0 }} transition={{ type: "spring", stiffness: 400, damping: 28 }}>
             <ChevronRight size={12} />
           </motion.span>
           {expanded ? "Hide" : "Details"}
-        </motion.button>
+        </button>
 
         {/* Delete */}
-        <motion.button
+        <button
           type="button"
           onClick={() => onDelete(capture.id)}
-          whileTap={{ scale: 0.85 }}
-          transition={{ type: "spring", stiffness: 420, damping: 28 }}
-          className="flex h-6 w-6 items-center justify-center rounded-full outline-none"
-          style={{ background: "var(--neu-base)", boxShadow: "var(--shadow-raised-sm)", color: "var(--neu-error)" }}
+          className="flex h-6 w-6 items-center justify-center rounded-lg text-[var(--error)] outline-none transition-colors duration-150 hover:bg-[var(--error-soft)] active:scale-[0.95]"
         >
           <Trash2 size={11} />
-        </motion.button>
+        </button>
       </div>
 
       {/* Expanded details */}
@@ -267,7 +271,7 @@ function CaptureCard({
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.26, ease: "easeInOut" }}
+            transition={{ duration: 0.15, ease: "easeInOut" }}
             className="overflow-hidden"
           >
             <div className="mt-2.5">
@@ -290,24 +294,19 @@ function HActionBtn({
   label: string
 }) {
   return (
-    <motion.button
+    <button
       type="button"
       onClick={onClick}
       disabled={disabled}
-      whileTap={disabled ? undefined : { scale: 0.88 }}
-      transition={{ type: "spring", stiffness: 420, damping: 28 }}
-      className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium outline-none"
+      className="flex items-center gap-1 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-secondary)] px-2.5 py-1 text-[11px] font-medium outline-none transition-all duration-150 hover:bg-[var(--bg-tertiary)] active:scale-[0.98]"
       style={{
-        background: "var(--neu-base)",
-        boxShadow: "var(--shadow-raised-sm)",
-        color: active ? "var(--neu-success)" : "var(--neu-text2)",
+        color: active ? "var(--success)" : "var(--text-secondary)",
         opacity: disabled && !active ? 0.5 : 1,
-        transition: "color 0.2s ease",
       }}
     >
       {icon}
       {label}
-    </motion.button>
+    </button>
   )
 }
 
@@ -329,10 +328,10 @@ function CollapsibleSection({ label, summary, children }: {
           transition={{ type: "spring", stiffness: 400, damping: 28 }}
           className="flex-shrink-0"
         >
-          <ChevronRight size={10} style={{ color: "var(--neu-text2)" }} />
+          <ChevronRight size={10} className="text-[var(--text-secondary)]" />
         </motion.span>
-        <span className="font-semibold" style={{ color: "var(--neu-text2)" }}>{label}: </span>
-        <span style={{ color: "var(--neu-text1)" }}>{summary}</span>
+        <span className="font-semibold text-[var(--text-secondary)]">{label}: </span>
+        <span className="text-[var(--text-primary)]">{summary}</span>
       </button>
       <AnimatePresence>
         {open && (
@@ -340,12 +339,12 @@ function CollapsibleSection({ label, summary, children }: {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.22, ease: "easeInOut" }}
+            transition={{ duration: 0.15, ease: "easeInOut" }}
             className="overflow-hidden"
           >
             <div
               className="mt-1 pl-3"
-              style={{ borderLeft: "2px solid rgba(163,177,198,0.45)", marginLeft: 4 }}
+              style={{ borderLeft: "2px solid var(--border-primary)", marginLeft: 4 }}
             >
               {children}
             </div>
@@ -357,21 +356,18 @@ function CollapsibleSection({ label, summary, children }: {
 }
 
 const LEVEL_COLORS: Record<string, string> = {
-  error: "var(--neu-error)",
-  warning: "var(--neu-warning)",
-  log: "var(--neu-text1)",
-  info: "var(--neu-accent)",
-  debug: "var(--neu-text2)",
+  error: "var(--error)",
+  warning: "var(--warning)",
+  log: "var(--text-primary)",
+  info: "var(--accent)",
+  debug: "var(--text-secondary)",
 }
 
 function CaptureDetails({ capture }: { capture: StoredCapture }) {
   return (
-    <div
-      className="space-y-2 rounded-2xl p-3 text-xs"
-      style={{ background: "var(--neu-base)", boxShadow: "var(--shadow-inset-sm)", color: "var(--neu-text1)" }}
-    >
+    <div className="space-y-2 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-secondary)] p-3 text-xs text-[var(--text-primary)]">
       <div>
-        <span className="font-semibold" style={{ color: "var(--neu-text2)" }}>URL: </span>
+        <span className="font-semibold text-[var(--text-secondary)]">URL: </span>
         <span className="break-all">{capture.url}</span>
       </div>
 
@@ -381,7 +377,7 @@ function CaptureDetails({ capture }: { capture: StoredCapture }) {
           summary={`${capture.console.summary.errors} errors, ${capture.console.summary.warnings} warnings`}
         >
           {capture.console.logs.length === 0 ? (
-            <p style={{ color: "var(--neu-text2)" }}>No console output.</p>
+            <p className="text-[var(--text-secondary)]">No console output.</p>
           ) : (
             <div className="space-y-1">
               {capture.console.logs.map((log, i) => {
@@ -390,13 +386,13 @@ function CaptureDetails({ capture }: { capture: StoredCapture }) {
                   : ""
                 return (
                   <div key={i}>
-                    <span className="font-semibold" style={{ color: LEVEL_COLORS[log.level] ?? "var(--neu-text1)" }}>
+                    <span className="font-semibold" style={{ color: LEVEL_COLORS[log.level] ?? "var(--text-primary)" }}>
                       [{log.level.toUpperCase()}]
                     </span>{" "}
                     <span>{truncate(log.message, 150)}</span>
-                    {location && <span style={{ color: "var(--neu-text2)" }}>{location}</span>}
+                    {location && <span className="text-[var(--text-secondary)]">{location}</span>}
                     {log.stack && (
-                      <pre className="mt-0.5 whitespace-pre-wrap text-[10px]" style={{ color: "var(--neu-text2)" }}>
+                      <pre className="mt-0.5 whitespace-pre-wrap text-[10px] text-[var(--text-secondary)]">
                         {log.stack.split("\n").slice(0, 2).join("\n")}
                       </pre>
                     )}
@@ -415,7 +411,7 @@ function CaptureDetails({ capture }: { capture: StoredCapture }) {
         >
           {(() => {
             const allReqs = capture.network.all ?? [...capture.network.failed, ...capture.network.slow]
-            if (allReqs.length === 0) return <p style={{ color: "var(--neu-text2)" }}>No requests recorded.</p>
+            if (allReqs.length === 0) return <p className="text-[var(--text-secondary)]">No requests recorded.</p>
             const sorted = [...allReqs].sort((a, b) => {
               const aF = a.status >= 400 ? 0 : 1
               const bF = b.status >= 400 ? 0 : 1
@@ -427,16 +423,16 @@ function CaptureDetails({ capture }: { capture: StoredCapture }) {
                 {sorted.slice(0, 20).map((req, i) => {
                   const isFailed = req.status >= 400
                   const isSlow = !isFailed && req.duration > 3000
-                  const color = isFailed ? "var(--neu-error)" : isSlow ? "var(--neu-warning)" : "var(--neu-text1)"
+                  const color = isFailed ? "var(--error)" : isSlow ? "var(--warning)" : "var(--text-primary)"
                   return (
                     <div key={i} style={{ color }}>
                       <span className="font-semibold">{req.status}</span>{" "}
                       <span>{truncate(extractPath(req.url), 60)}</span>{" "}
-                      <span style={{ color: "var(--neu-text2)" }}>{req.duration}ms · {req.type}</span>
+                      <span className="text-[var(--text-secondary)]">{req.duration}ms · {req.type}</span>
                     </div>
                   )
                 })}
-                {sorted.length > 20 && <p style={{ color: "var(--neu-text2)" }}>... and {sorted.length - 20} more</p>}
+                {sorted.length > 20 && <p className="text-[var(--text-secondary)]">... and {sorted.length - 20} more</p>}
               </div>
             )
           })()}
@@ -445,7 +441,7 @@ function CaptureDetails({ capture }: { capture: StoredCapture }) {
 
       {capture.dom && (
         <CollapsibleSection label="DOM" summary={formatBytes(new Blob([capture.dom]).size)}>
-          <pre className="max-h-36 overflow-auto whitespace-pre-wrap break-all text-[10px]" style={{ color: "var(--neu-text1)" }}>
+          <pre className="max-h-36 overflow-auto whitespace-pre-wrap break-all text-[10px] text-[var(--text-primary)]">
             {capture.dom.slice(0, 2000)}{capture.dom.length > 2000 && "\n… (truncated)"}
           </pre>
         </CollapsibleSection>
@@ -454,17 +450,14 @@ function CaptureDetails({ capture }: { capture: StoredCapture }) {
       {capture.cookies && (
         <CollapsibleSection label="Cookies" summary={`${capture.cookies.summary.total} cookies`}>
           {capture.cookies.cookies.length === 0 ? (
-            <p style={{ color: "var(--neu-text2)" }}>No cookies.</p>
+            <p className="text-[var(--text-secondary)]">No cookies.</p>
           ) : (
             <div className="space-y-0.5">
               {capture.cookies.cookies.map((c, i) => (
                 <div key={i}>
                   <span className="font-semibold">{c.name}</span>: <span>{truncate(c.value, 80)}</span>
                   {c.secure && (
-                    <span
-                      className="ml-1 rounded-full px-1.5 py-0.5 text-[9px] font-semibold"
-                      style={{ background: "rgba(16,185,129,0.15)", color: "var(--neu-success)" }}
-                    >
+                    <span className="ml-1 rounded-md bg-[var(--success-soft)] px-1.5 py-0.5 text-[9px] font-semibold text-[var(--success)]">
                       secure
                     </span>
                   )}
@@ -483,18 +476,18 @@ function CaptureDetails({ capture }: { capture: StoredCapture }) {
           <div className="space-y-0.5">
             {capture.storage.localStorage.entries.map((e, i) => (
               <div key={`l-${i}`}>
-                <span style={{ color: "var(--neu-text2)" }}>[local]</span>{" "}
+                <span className="text-[var(--text-secondary)]">[local]</span>{" "}
                 <span className="font-semibold">{e.key}</span>: <span>{truncate(e.value, 80)}</span>
               </div>
             ))}
             {capture.storage.sessionStorage.entries.map((e, i) => (
               <div key={`s-${i}`}>
-                <span style={{ color: "var(--neu-text2)" }}>[session]</span>{" "}
+                <span className="text-[var(--text-secondary)]">[session]</span>{" "}
                 <span className="font-semibold">{e.key}</span>: <span>{truncate(e.value, 80)}</span>
               </div>
             ))}
             {capture.storage.localStorage.entries.length === 0 && capture.storage.sessionStorage.entries.length === 0 && (
-              <p style={{ color: "var(--neu-text2)" }}>No storage entries.</p>
+              <p className="text-[var(--text-secondary)]">No storage entries.</p>
             )}
           </div>
         </CollapsibleSection>
@@ -523,7 +516,7 @@ function CaptureDetails({ capture }: { capture: StoredCapture }) {
       {capture.interactions && (
         <CollapsibleSection label="Interactions" summary={`${capture.interactions.summary.total} events`}>
           {capture.interactions.events.length === 0 ? (
-            <p style={{ color: "var(--neu-text2)" }}>No interactions recorded.</p>
+            <p className="text-[var(--text-secondary)]">No interactions recorded.</p>
           ) : (
             <div className="space-y-0.5">
               {capture.interactions.events.map((evt, i) => (

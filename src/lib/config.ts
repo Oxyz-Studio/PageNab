@@ -16,7 +16,7 @@ export const DEFAULT_SETTINGS: Settings = {
   preset: "light",
   customOptions: { ...DEFAULT_CUSTOM_OPTIONS },
   screenshotMode: "fullpage",
-  clipboardMode: "text",
+  clipboardMode: "both",
   notifications: true,
   maxCaptures: 20,
   shortcut: "Ctrl+Shift+N",

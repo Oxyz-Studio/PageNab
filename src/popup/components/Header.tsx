@@ -2,41 +2,30 @@ import { motion } from "framer-motion"
 import { ChevronLeft, Clock, Settings } from "lucide-react"
 import type { ReactNode } from "react"
 
-interface NeuIconButtonProps {
+interface IconButtonProps {
   onClick?: () => void
   title?: string
   children: ReactNode
 }
 
-export function NeuIconButton({ onClick, title, children }: NeuIconButtonProps) {
+function IconButton({ onClick, title, children }: IconButtonProps) {
   return (
-    <motion.button
+    <button
       type="button"
       onClick={onClick}
       title={title}
-      whileHover={{ scale: 1.06 }}
-      whileTap={{ scale: 0.88 }}
-      transition={{ type: "spring", stiffness: 420, damping: 26 }}
-      className="flex h-8 w-8 items-center justify-center rounded-full outline-none"
-      style={{
-        background: "var(--neu-base)",
-        boxShadow: "var(--shadow-raised-sm)",
-      }}
+      className="flex h-8 w-8 items-center justify-center rounded-lg outline-none transition-colors duration-150 hover:bg-[var(--bg-secondary)] active:bg-[var(--bg-tertiary)]"
     >
       {children}
-    </motion.button>
+    </button>
   )
 }
 
 interface HeaderProps {
-  /** Show a back chevron instead of the logo */
   showBack?: boolean
   onBack?: () => void
-  /** Title text for sub-screens (History, Settings) */
   title?: string
-  /** Inline status indicator (e.g. "Saved") */
   status?: string
-  /** Callbacks for right-side icon buttons (main screen only) */
   onHistory?: () => void
   onSettings?: () => void
   rightContent?: ReactNode
@@ -52,32 +41,23 @@ export function Header({
   rightContent,
 }: HeaderProps) {
   return (
-    <div
-      className="flex items-center justify-between px-4 py-3"
-      style={{ borderBottom: "1px solid rgba(163, 177, 198, 0.38)" }}
-    >
+    <div className="flex items-center justify-between border-b border-[var(--border-primary)] px-4 py-3">
       {/* Left side */}
       <div className="flex items-center gap-2.5">
         {showBack && (
-          <NeuIconButton onClick={onBack} title="Back">
-            <ChevronLeft size={16} style={{ color: "var(--neu-text2)" }} />
-          </NeuIconButton>
+          <IconButton onClick={onBack} title="Back">
+            <ChevronLeft size={16} className="text-[var(--text-secondary)]" />
+          </IconButton>
         )}
 
         {title ? (
-          <span
-            className="text-sm font-bold"
-            style={{ color: "var(--neu-text1)" }}
-          >
+          <span className="text-sm font-bold text-[var(--text-primary)]">
             {title}
           </span>
         ) : (
-          <span
-            className="text-base font-black tracking-tight select-none"
-            style={{ color: "var(--neu-text1)" }}
-          >
+          <span className="text-base font-black tracking-tight select-none text-[var(--text-primary)]">
             Page
-            <span style={{ color: "var(--neu-accent)" }}>Nab</span>
+            <span className="text-[var(--accent)]">Nab</span>
           </span>
         )}
 
@@ -86,8 +66,7 @@ export function Header({
             initial={{ opacity: 0, x: -6 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0 }}
-            className="text-xs font-semibold"
-            style={{ color: "var(--neu-success)" }}
+            className="text-xs font-semibold text-[var(--success)]"
           >
             {status}
           </motion.span>
@@ -95,17 +74,17 @@ export function Header({
       </div>
 
       {/* Right side */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1">
         {rightContent}
         {onHistory && (
-          <NeuIconButton onClick={onHistory} title="History">
-            <Clock size={14} style={{ color: "var(--neu-text2)" }} />
-          </NeuIconButton>
+          <IconButton onClick={onHistory} title="History">
+            <Clock size={14} className="text-[var(--text-secondary)]" />
+          </IconButton>
         )}
         {onSettings && (
-          <NeuIconButton onClick={onSettings} title="Settings">
-            <Settings size={14} style={{ color: "var(--neu-text2)" }} />
-          </NeuIconButton>
+          <IconButton onClick={onSettings} title="Settings">
+            <Settings size={14} className="text-[var(--text-secondary)]" />
+          </IconButton>
         )}
       </div>
     </div>

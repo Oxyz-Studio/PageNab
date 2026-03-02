@@ -20,6 +20,7 @@ AI coding assistants are powerful, but they can't see your browser. When you nee
 
 - **Full page screenshot** — Automatic capture, pastes as an image (like a native screenshot)
 - **Area selection** — Draw a rectangle to capture a specific region
+- **Element selection** — Click any element to capture it with its metadata
 - **Console logs** — Errors, warnings, and all log levels with stack traces
 - **Network requests** — Failed (4xx/5xx) and slow requests with details
 - **DOM snapshot** — Clean HTML with inline scripts removed
@@ -77,7 +78,7 @@ When you paste, the AI gets both the image and the text — full context in one 
 
 | Preset | What's captured | Typical size |
 |--------|----------------|--------------|
-| **Light** (default) | Screenshot + metadata + console errors/warnings + failed network | ~200-500 tokens + image |
+| **Light** (default) | Screenshot + metadata + console errors/warnings + failed network + interactions | ~200-500 tokens + image |
 | **Full** | Everything: screenshot, console (all), network, DOM, cookies, storage, interactions, performance | ~1.5K-150K tokens + image |
 | **Custom** | You choose via checkboxes (console & network on by default) | Varies |
 
@@ -126,6 +127,7 @@ Contributions are welcome! See [CONTRIBUTING.md](docs/CONTRIBUTING.md) for guide
 ### V1 (current)
 - [x] Full page screenshot capture
 - [x] Area selection capture
+- [x] Element selection capture
 - [x] Console logs (errors, warnings, all levels)
 - [x] Network requests (failed, slow)
 - [x] DOM snapshot
@@ -139,7 +141,6 @@ Contributions are welcome! See [CONTRIBUTING.md](docs/CONTRIBUTING.md) for guide
 - [x] Keyboard shortcut (Ctrl+Shift+N / Cmd+Shift+N)
 
 ### V2 (planned)
-- [ ] Element selector with visual highlight
 - [ ] MCP server for Claude Code / Cursor
 - [ ] Firefox support
 - [ ] Safari support

@@ -96,8 +96,8 @@ describe("generateTextContent", () => {
     const text = generateTextContent(input)
     expect(text).toContain("## Console")
     expect(text).toContain("1 error")
-    expect(text).toContain(
-      "**ERROR** TypeError: Cannot read property 'map' of undefined",
+    expect(text).toMatch(
+      /\*\*ERROR\*\* \(\d{2}:\d{2}:\d{2}\) TypeError: Cannot read property 'map' of undefined/,
     )
     expect(text).toContain("`main.js:47`")
   })
@@ -126,8 +126,8 @@ describe("generateTextContent", () => {
     })
     const text = generateTextContent(input)
     expect(text).toContain("2 warnings")
-    expect(text).toContain("**WARN** Deprecation warning: use newMethod instead")
-    expect(text).toContain("**WARN** Performance warning: slow render")
+    expect(text).toMatch(/\*\*WARN\*\* \(\d{2}:\d{2}:\d{2}\) Deprecation warning: use newMethod instead/)
+    expect(text).toMatch(/\*\*WARN\*\* \(\d{2}:\d{2}:\d{2}\) Performance warning: slow render/)
   })
 
   it("includes console logs and info in full mode", () => {
@@ -170,11 +170,11 @@ describe("generateTextContent", () => {
     })
     const text = generateTextContent(input)
     expect(text).toContain("1 error, 1 warning, 2 logs, 1 info")
-    expect(text).toContain("**ERROR** Something broke")
-    expect(text).toContain("**WARN** Deprecation warning")
-    expect(text).toContain("**LOG** App initialized")
-    expect(text).toContain("**LOG** Fetching data...")
-    expect(text).toContain("**INFO** Version 2.1.0")
+    expect(text).toMatch(/\*\*ERROR\*\* \(\d{2}:\d{2}:\d{2}\) Something broke/)
+    expect(text).toMatch(/\*\*WARN\*\* \(\d{2}:\d{2}:\d{2}\) Deprecation warning/)
+    expect(text).toMatch(/\*\*LOG\*\* \(\d{2}:\d{2}:\d{2}\) App initialized/)
+    expect(text).toMatch(/\*\*LOG\*\* \(\d{2}:\d{2}:\d{2}\) Fetching data\.\.\./)
+    expect(text).toMatch(/\*\*INFO\*\* \(\d{2}:\d{2}:\d{2}\) Version 2\.1\.0/)
   })
 
   it("shows clean network message when no failures", () => {
@@ -220,7 +220,7 @@ describe("generateTextContent", () => {
     const text = generateTextContent(input)
     expect(text).toContain("## Network")
     expect(text).toContain("45 requests, 1 failed")
-    expect(text).toContain("**FAIL** `/users`")
+    expect(text).toMatch(/\*\*FAIL\*\* \(\d{2}:\d{2}:\d{2}\) `\/users`/)
     expect(text).toContain("500 Internal Server Error")
     expect(text).toContain("(fetch)")
   })
@@ -251,7 +251,7 @@ describe("generateTextContent", () => {
     })
     const text = generateTextContent(input)
     expect(text).toContain("1 slow")
-    expect(text).toContain("**SLOW** `/heavy`")
+    expect(text).toMatch(/\*\*SLOW\*\* \(\d{2}:\d{2}:\d{2}\) `\/heavy`/)
     expect(text).toContain("3200ms")
   })
 
@@ -336,10 +336,10 @@ describe("generateTextContent", () => {
     })
     const text = generateTextContent(input)
     expect(text).toContain("4 requests, 1 failed, 1 slow")
-    expect(text).toContain("**FAIL** `/users` → 500")
-    expect(text).toContain("`/app.js` → 200 (45ms, 122.5 KB, script)")
-    expect(text).toContain("**SLOW** `/heavy` → 200 (3200ms, xhr)")
-    expect(text).toContain("`/style.css` → 200 (30ms, 2.0 KB, link)")
+    expect(text).toMatch(/\*\*FAIL\*\* \(\d{2}:\d{2}:\d{2}\) `\/users` → 500/)
+    expect(text).toMatch(/\(\d{2}:\d{2}:\d{2}\) `\/app\.js` → 200 \(45ms, 122\.5 KB, script\)/)
+    expect(text).toMatch(/\*\*SLOW\*\* \(\d{2}:\d{2}:\d{2}\) `\/heavy` → 200 \(3200ms, xhr\)/)
+    expect(text).toMatch(/\(\d{2}:\d{2}:\d{2}\) `\/style\.css` → 200 \(30ms, 2\.0 KB, link\)/)
     // Should NOT show "No failed requests."
     expect(text).not.toContain("No failed requests.")
   })

@@ -3,27 +3,42 @@ module.exports = {
   content: ["./src/**/*.{tsx,ts,jsx,js}"],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ["Inter", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "sans-serif"],
+      },
       colors: {
-        neu: {
-          base: "#e0e5ec",
-          dark: "#a3b1c6",
-          light: "#ffffff",
-          accent: "#6366f1",
-          "accent-soft": "#eef2ff",
-          text1: "#2d3142",
-          text2: "#6b7280",
-          success: "#10b981",
-          error: "#ef4444",
-          warning: "#f59e0b",
+        bg: {
+          primary: "#ffffff",
+          secondary: "#f9fafb",
+          tertiary: "#f3f4f6",
         },
+        border: {
+          primary: "#e5e7eb",
+          secondary: "#d1d5db",
+        },
+        text: {
+          primary: "#111827",
+          secondary: "#6b7280",
+          tertiary: "#9ca3af",
+        },
+        accent: {
+          DEFAULT: "#6366f1",
+          hover: "#4f46e5",
+          soft: "#eef2ff",
+        },
+        success: {
+          DEFAULT: "#10b981",
+          soft: "#ecfdf5",
+        },
+        error: {
+          DEFAULT: "#ef4444",
+          soft: "#fef2f2",
+        },
+        warning: "#f59e0b",
       },
       boxShadow: {
-        "neu-raised": "6px 6px 14px #a3b1c6, -6px -6px 14px #ffffff",
-        "neu-raised-sm": "3px 3px 7px #a3b1c6, -3px -3px 7px #ffffff",
-        "neu-inset": "inset 4px 4px 10px #a3b1c6, inset -4px -4px 10px #ffffff",
-        "neu-inset-sm": "inset 2px 2px 5px #a3b1c6, inset -2px -2px 5px #ffffff",
-        "neu-pressed": "inset 3px 3px 8px #a3b1c6, inset -1px -1px 4px #ffffff",
-        "neu-accent": "4px 4px 12px rgba(99, 102, 241, 0.4), -4px -4px 12px #ffffff",
+        sm: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+        md: "0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05)",
       },
     },
   },

@@ -5,7 +5,7 @@ import { ExternalLink } from "lucide-react"
 import { DEFAULT_SETTINGS } from "../lib/config"
 import type { ClipboardMode, Settings } from "../lib/types"
 import { Header } from "./components/Header"
-import { NeuSwitch } from "./components/NeuSwitch"
+import { Switch } from "./components/Switch"
 
 export function SettingsScreen({ onBack }: { onBack: () => void }) {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS)
@@ -25,7 +25,7 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
   }
 
   return (
-    <div style={{ background: "var(--neu-base)" }}>
+    <div className="bg-[var(--bg-primary)]">
       <Header
         showBack
         onBack={onBack}
@@ -36,21 +36,22 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
       <div className="space-y-3 px-4 py-4">
         {/* Keyboard shortcut */}
         <SettingsCard>
-          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest" style={{ color: "var(--neu-text2)" }}>
+          <p className="mb-1.5 text-[10px] font-medium uppercase tracking-widest text-[var(--text-secondary)]">
             Keyboard shortcut
           </p>
-          <div
-            className="inline-flex items-center rounded-full px-3 py-1.5 text-sm font-semibold"
-            style={{
-              background: "var(--neu-base)",
-              boxShadow: "var(--shadow-inset-sm)",
-              color: "var(--neu-text1)",
-              fontFamily: "monospace",
-            }}
-          >
-            {settings.shortcut}
+          <div className="flex items-center gap-1">
+            {(settings.shortcut || "Ctrl+Shift+N").split("+").map((key, i) => (
+              <span key={i} className="flex items-center gap-1">
+                {i > 0 && (
+                  <span className="text-[10px] text-[var(--text-tertiary)]">+</span>
+                )}
+                <kbd className="kbd-pill px-2.5 py-1 text-sm font-semibold text-[var(--text-primary)]">
+                  {key.trim()}
+                </kbd>
+              </span>
+            ))}
           </div>
-          <p className="mt-1.5 text-[10px]" style={{ color: "var(--neu-text2)", opacity: 0.7 }}>
+          <p className="mt-1.5 text-[10px] text-[var(--text-tertiary)]">
             Change via chrome://extensions/shortcuts
           </p>
         </SettingsCard>
@@ -59,12 +60,12 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
         <SettingsCard>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-semibold" style={{ color: "var(--neu-text1)" }}>Notifications</p>
-              <p className="mt-0.5 text-[11px]" style={{ color: "var(--neu-text2)" }}>
+              <p className="text-sm font-semibold text-[var(--text-primary)]">Notifications</p>
+              <p className="mt-0.5 text-[11px] text-[var(--text-secondary)]">
                 Show notification after capture
               </p>
             </div>
-            <NeuSwitch
+            <Switch
               checked={settings.notifications}
               onChange={(checked) => handleSave({ ...settings, notifications: checked })}
             />
@@ -73,7 +74,7 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
 
         {/* Clipboard mode */}
         <SettingsCard>
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest" style={{ color: "var(--neu-text2)" }}>
+          <p className="mb-2 text-[10px] font-medium uppercase tracking-widest text-[var(--text-secondary)]">
             Clipboard
           </p>
           <div className="space-y-2">
@@ -88,17 +89,18 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
               return (
                 <label
                   key={value}
-                  className="flex cursor-pointer items-start gap-3"
+                  className={`-mx-2 flex cursor-pointer items-start gap-3 rounded-lg px-2 py-1.5 transition-colors duration-150 ${
+                    isChecked
+                      ? "bg-[var(--accent-soft)]"
+                      : "hover:bg-[var(--bg-secondary)]"
+                  }`}
                   onClick={() => handleSave({ ...settings, clipboardMode: value as ClipboardMode })}
                 >
                   <div
-                    className="relative mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full"
+                    className="relative mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full border transition-all duration-150"
                     style={{
-                      background: isChecked ? "#6366f1" : "var(--neu-base)",
-                      boxShadow: isChecked
-                        ? "inset 2px 2px 4px rgba(0,0,0,0.2), inset -1px -1px 3px rgba(140,140,255,0.4)"
-                        : "inset 2px 2px 5px var(--neu-dark), inset -2px -2px 5px var(--neu-light)",
-                      transition: "background 0.22s ease, box-shadow 0.22s ease",
+                      background: isChecked ? "var(--accent)" : "var(--bg-primary)",
+                      borderColor: isChecked ? "var(--accent)" : "var(--border-secondary)",
                     }}
                   >
                     <AnimatePresence>
@@ -114,8 +116,8 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
                     </AnimatePresence>
                   </div>
                   <div>
-                    <p className="text-sm font-medium" style={{ color: "var(--neu-text1)" }}>{label}</p>
-                    <p className="mt-0.5 text-[10px] leading-snug" style={{ color: "var(--neu-text2)" }}>{desc}</p>
+                    <p className="text-sm font-medium text-[var(--text-primary)]">{label}</p>
+                    <p className="mt-0.5 text-[10px] leading-snug text-[var(--text-secondary)]">{desc}</p>
                   </div>
                 </label>
               )
@@ -125,7 +127,7 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
 
         {/* Max captures */}
         <SettingsCard>
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest" style={{ color: "var(--neu-text2)" }}>
+          <p className="mb-2 text-[10px] font-medium uppercase tracking-widest text-[var(--text-secondary)]">
             Max captures in history
           </p>
           <input
@@ -137,28 +139,19 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
               const val = parseInt(e.target.value, 10)
               if (val >= 5 && val <= 100) handleSave({ ...settings, maxCaptures: val })
             }}
-            className="w-24 rounded-full bg-transparent px-4 py-2 text-sm font-semibold outline-none"
-            style={{
-              background: "var(--neu-base)",
-              boxShadow: "var(--shadow-inset-sm)",
-              color: "var(--neu-text1)",
-            }}
+            className="w-24 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-secondary)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] outline-none transition-all duration-150 focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]"
           />
         </SettingsCard>
       </div>
 
       {/* Footer */}
-      <div
-        className="flex items-center justify-center gap-3 px-4 py-3 text-[11px]"
-        style={{ borderTop: "1px solid rgba(163,177,198,0.38)", color: "var(--neu-text2)", opacity: 0.8 }}
-      >
+      <div className="flex items-center justify-center gap-3 border-t border-[var(--border-primary)] px-4 py-3 text-[11px] text-[var(--text-tertiary)]">
         <span>PageNab v0.0.1 · MIT</span>
         <a
           href="https://github.com/Oxyz-Studio/PageNab"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-1 font-medium"
-          style={{ color: "var(--neu-accent)" }}
+          className="flex items-center gap-1 font-medium text-[var(--accent)] hover:text-[var(--accent-hover)]"
         >
           GitHub <ExternalLink size={10} />
         </a>
@@ -169,10 +162,7 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
 
 function SettingsCard({ children }: { children: React.ReactNode }) {
   return (
-    <div
-      className="rounded-2xl p-4"
-      style={{ background: "var(--neu-base)", boxShadow: "var(--shadow-raised-sm)" }}
-    >
+    <div className="rounded-xl border border-[var(--border-primary)] bg-[var(--bg-primary)] p-4">
       {children}
     </div>
   )

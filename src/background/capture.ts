@@ -22,7 +22,7 @@ import { saveCapture } from "./history"
 import { generateTextContent } from "../lib/format"
 
 function shouldCapture(dataType: string, preset: Preset, customOptions?: CustomOptions): boolean {
-  if (preset === "light") return dataType === "console" || dataType === "network"
+  if (preset === "light") return dataType === "console" || dataType === "network" || dataType === "interactions"
   if (preset === "full") return true
   if (preset === "custom" && customOptions) {
     return customOptions[dataType as keyof CustomOptions] ?? false

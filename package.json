@@ -23,6 +23,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@fontsource/inter": "^5.2.8",
     "@headlessui/react": "^2.2.9",
     "framer-motion": "^11.18.2",
     "lucide-react": "^0.576.0",

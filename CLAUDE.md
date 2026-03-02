@@ -60,6 +60,17 @@ Flow area :
 7. Background sauvegarde les deux screenshots (full + area) via chrome.downloads
 8. Background copie dans le clipboard : text/plain + image/png (area screenshot)
 9. Suite identique (historique, notification)
+
+Flow element :
+1. Utilisateur selectionne mode "Element" et clique "Nab"
+2. Popup se ferme, content script injecte un overlay de selection
+3. Utilisateur survole les elements (highlight), clique pour selectionner
+4. Content script capture l'element (selector, boundingRect, outerHTML) + donnees selon le preset
+5. Background capture le screenshot full page via captureVisibleTab
+6. Background crop la zone de l'element (canvas)
+7. Background sauvegarde les deux screenshots (full + element) via chrome.downloads
+8. Background copie dans le clipboard : text/plain (avec elementData) + image/png (element screenshot)
+9. Suite identique (historique, notification)
 ```
 
 ### Clipboard multi-format
@@ -135,11 +146,11 @@ Plasmo 0.90.5 (Manifest V3) | React 18.3.1 | TypeScript | Tailwind CSS 3.4 | Vit
 
 ### Light (defaut)
 
-Capture legere : screenshot + metadata + console errors/warnings + network failed.
+Capture legere : screenshot + metadata + console errors/warnings + network failed + interactions.
 
 Le clipboard contient :
 - **image/png** : le screenshot
-- **text/plain** : metadata + console (errors + warnings) + network (failed only) + chemin screenshots
+- **text/plain** : metadata + console (errors + warnings) + network (failed only) + interactions + chemin screenshots
 
 ~200-500 tokens de texte + image attachee. Ideal pour la majorite des cas.
 
@@ -174,31 +185,33 @@ Chaque capture produit :
 ```
 screenshot (PNG)      → clipboard image/png + Downloads (persistance)
 area screenshot (PNG) → clipboard image/png (si area) + Downloads
+element screenshot    → clipboard image/png (si element) + Downloads
+elementData           → { selector, tagName, dimensions, outerHTML } (si element)
 metadata              → { url, title, timestamp, viewport, userAgent, preset, capturedData, ... }
 console               → { summary, logs: [...] } (Light: errors+warnings | Full: all)
 network               → { summary, failed: [...], slow: [...] } (Light: failed only | Full: failed+slow)
 dom                   → HTML nettoye (Full/Custom uniquement)
 cookies               → { summary, cookies: [...] } sanitise (Full/Custom uniquement)
 storage               → { localStorage, sessionStorage } sanitise (Full/Custom uniquement)
-interactions          → { summary, events: [...] } (Full/Custom uniquement)
+interactions          → { summary, events: [...] } (tous les presets)
 performance           → { loadTime, LCP, CLS, FID, memory, ... } (Full/Custom uniquement)
 ```
 
 ## Scope V1 vs V2
 
 ### V1 (actuel)
-- Capture : screenshot (full page + area) + metadata + console + network + DOM + cookies + storage + interactions + perf
+- Modes : Full page, Area (rectangle selection), Element (selection visuelle d'un element specifique)
+- Capture : screenshot (full page + area + element) + metadata + console + network + DOM + cookies + storage + interactions + perf
 - Presets : Light (minimal), Full (tout), Custom (au choix)
 - Clipboard : multi-format text/plain + image/png (l'image s'attache directement au collage)
 - Screenshot : aussi sauvegarde via chrome.downloads pour persistance
-- UI : popup avec presets, switches, history, settings
+- UI : popup avec modes, presets, switches, history, settings
 - Raccourci clavier : `chrome.commands` (Ctrl+Shift+N / Cmd+Shift+N), modifiable via chrome://extensions/shortcuts
 - Historique : captures stockees dans chrome.storage.local, copy/details/delete
 - Tests : unitaires Vitest
 - Zero friction : installer = pret a capturer
 
 ### V2 (futur)
-- Element selector : selection visuelle d'un element specifique (highlight DOM)
 - MCP Server : package npm `pagenab-mcp` pour Claude Code / Cursor
 - Native Messaging Host : ecriture fichiers dans `~/.pagenab/` pour power users
 - Stockage local avec rotation automatique

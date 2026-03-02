@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { AnimatePresence, motion } from "framer-motion"
-import { Copy, Image } from "lucide-react"
+import { Clipboard, Image } from "lucide-react"
 
 import { DEFAULT_SETTINGS } from "../lib/config"
 import type {
@@ -14,11 +14,11 @@ import type {
 } from "../lib/types"
 import { HistoryScreen } from "./History"
 import { SettingsScreen } from "./Settings"
-import { NeuButton } from "./components/NeuButton"
-import { NeuSegmented } from "./components/NeuSegmented"
-import { NeuCheckbox } from "./components/NeuCheckbox"
+import { Button } from "./components/Button"
+import { Segmented } from "./components/Segmented"
+import { Checkbox } from "./components/Checkbox"
 import { Header } from "./components/Header"
-import { CapturingOrb } from "./components/CapturingOrb"
+import { LoadingSpinner } from "./components/LoadingSpinner"
 import { StateBadge } from "./components/StateBadge"
 import "../style.css"
 
@@ -34,6 +34,8 @@ type Screen = "main" | "history" | "settings"
 
 // ─── Animation presets ───────────────────────────────────────────────────────
 
+const screenTransition = { duration: 0.12, ease: "easeOut" as const }
+
 const screenVariants = {
   initial: { opacity: 0, y: 12 },
   animate: { opacity: 1, y: 0 },
@@ -46,7 +48,19 @@ const stateVariants = {
   exit: { opacity: 0, y: -8 },
 }
 
-const spring = { type: "spring" as const, stiffness: 320, damping: 30 }
+// ─── Preset metadata ─────────────────────────────────────────────────────────
+
+const PRESET_DOT: Record<string, string> = {
+  light: "#10b981",
+  full: "#f59e0b",
+  custom: "#9ca3af",
+}
+
+const PRESET_HINT: Record<string, string> = {
+  light: "Errors, warnings, failed requests, interactions",
+  full: "Console, network, DOM, cookies, storage, interactions, perf",
+  custom: "Choose which data to capture",
+}
 
 // ─── Root ─────────────────────────────────────────────────────────────────────
 
@@ -151,10 +165,7 @@ function IndexPopup() {
   }
 
   return (
-    <div
-      className="relative w-[360px] overflow-hidden"
-      style={{ background: "var(--neu-base)" }}
-    >
+    <div className="relative w-[360px] overflow-hidden bg-[var(--bg-primary)]">
       <AnimatePresence mode="wait">
         {screen === "history" && (
           <motion.div
@@ -163,7 +174,7 @@ function IndexPopup() {
             initial="initial"
             animate="animate"
             exit="exit"
-            transition={spring}
+            transition={screenTransition}
           >
             <HistoryScreen onBack={() => setScreen("main")} />
           </motion.div>
@@ -176,7 +187,7 @@ function IndexPopup() {
             initial="initial"
             animate="animate"
             exit="exit"
-            transition={spring}
+            transition={screenTransition}
           >
             <SettingsScreen onBack={() => setScreen("main")} />
           </motion.div>
@@ -189,7 +200,7 @@ function IndexPopup() {
             initial="initial"
             animate="animate"
             exit="exit"
-            transition={spring}
+            transition={screenTransition}
           >
             <Header
               onHistory={() => setScreen("history")}
@@ -205,7 +216,7 @@ function IndexPopup() {
                     initial="initial"
                     animate="animate"
                     exit="exit"
-                    transition={spring}
+                    transition={screenTransition}
                   >
                     <IdleView
                       preset={preset}
@@ -226,7 +237,7 @@ function IndexPopup() {
                     initial="initial"
                     animate="animate"
                     exit="exit"
-                    transition={spring}
+                    transition={screenTransition}
                   >
                     <CapturingView />
                   </motion.div>
@@ -239,7 +250,7 @@ function IndexPopup() {
                     initial="initial"
                     animate="animate"
                     exit="exit"
-                    transition={spring}
+                    transition={screenTransition}
                   >
                     <SuccessView
                       result={(state as Extract<PopupState, { status: "success" }>).result}
@@ -256,7 +267,7 @@ function IndexPopup() {
                     initial="initial"
                     animate="animate"
                     exit="exit"
-                    transition={spring}
+                    transition={screenTransition}
                   >
                     <ErrorView
                       message={(state as Extract<PopupState, { status: "error" }>).message}
@@ -295,7 +306,7 @@ function IdleView({
   const handlePresetChange = (v: string) => {
     const newPreset = v as Preset
     onPresetChange(newPreset)
-    const enabled = newPreset === "full" || (newPreset === "custom" && customOptions.interactions)
+    const enabled = newPreset === "light" || newPreset === "full" || (newPreset === "custom" && customOptions.interactions)
     chrome.runtime.sendMessage({ type: "UPDATE_INTERACTIONS_TRACKING", enabled })
   }
 
@@ -312,12 +323,12 @@ function IdleView({
       {/* Screenshot mode */}
       <div>
         <SectionLabel>Mode</SectionLabel>
-        <NeuSegmented
+        <Segmented
           layoutId="mode-pill"
           options={[
-            { value: "fullpage", label: "Full page" },
-            { value: "area", label: "Area" },
             { value: "element", label: "Element" },
+            { value: "area", label: "Area" },
+            { value: "fullpage", label: "Full page" },
           ]}
           value={mode}
           onChange={(v) => onModeChange(v as CaptureMode)}
@@ -327,7 +338,7 @@ function IdleView({
       {/* Preset */}
       <div>
         <SectionLabel>Capture</SectionLabel>
-        <NeuSegmented
+        <Segmented
           layoutId="preset-pill"
           options={[
             { value: "light", label: "Light" },
@@ -339,21 +350,21 @@ function IdleView({
         />
       </div>
 
-      {/* Preset hint — crossfades on change */}
+      {/* Preset hint */}
       <AnimatePresence mode="wait">
         <motion.p
           key={preset}
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -4 }}
-          transition={{ duration: 0.22 }}
-          className="text-[11px] leading-relaxed -mt-1"
-          style={{ color: "var(--neu-text2)" }}
+          transition={{ duration: 0.12 }}
+          className="flex items-center gap-1.5 text-[11px] leading-relaxed -mt-1 text-[var(--text-secondary)]"
         >
-          {preset === "light" && "Errors, warnings, failed requests"}
-          {preset === "full" &&
-            "Console, network, DOM, cookies, storage, interactions, perf"}
-          {preset === "custom" && "Screenshot + metadata always included"}
+          <span
+            className="inline-block h-1.5 w-1.5 flex-shrink-0 rounded-full"
+            style={{ background: PRESET_DOT[preset] }}
+          />
+          {PRESET_HINT[preset]}
         </motion.p>
       </AnimatePresence>
 
@@ -364,16 +375,10 @@ function IdleView({
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.28, ease: "easeInOut" }}
+            transition={{ duration: 0.15, ease: "easeInOut" }}
             className="overflow-hidden"
           >
-            <div
-              className="rounded-2xl p-3"
-              style={{
-                background: "var(--neu-base)",
-                boxShadow: "var(--shadow-inset-sm)",
-              }}
-            >
+            <div className="rounded-xl border border-[var(--border-primary)] bg-[var(--bg-secondary)] p-3">
               <div className="grid grid-cols-3 gap-x-3 gap-y-2.5">
                 {(
                   [
@@ -386,7 +391,7 @@ function IdleView({
                     ["interactions", "Interactions"],
                   ] as const
                 ).map(([key, label]) => (
-                  <NeuCheckbox
+                  <Checkbox
                     key={key}
                     checked={customOptions[key]}
                     onChange={(checked) => handleCustomOptionChange(key, checked)}
@@ -400,23 +405,22 @@ function IdleView({
       </AnimatePresence>
 
       {/* CTA */}
-      <NeuButton fullWidth onClick={onCapture}>
+      <Button fullWidth onClick={onCapture}>
         Nab this page
-      </NeuButton>
+      </Button>
 
-      {/* Shortcut hint — styled as a keyboard key */}
-      <div className="flex justify-center">
-        <span
-          className="rounded-full px-3 py-1 text-[10px] font-medium tracking-wide"
-          style={{
-            color: "var(--neu-text2)",
-            background: "var(--neu-base)",
-            boxShadow: "var(--shadow-inset-sm)",
-            opacity: 0.8,
-          }}
-        >
-          ⌨ Ctrl+Shift+N
-        </span>
+      {/* Shortcut hint */}
+      <div className="flex items-center justify-center gap-1">
+        {["Ctrl", "Shift", "N"].map((key, i) => (
+          <span key={key} className="flex items-center gap-1">
+            {i > 0 && (
+              <span className="text-[9px] text-[var(--text-tertiary)]">+</span>
+            )}
+            <kbd className="kbd-pill px-1.5 py-0.5 text-[10px] font-medium">
+              {key}
+            </kbd>
+          </span>
+        ))}
       </div>
     </div>
   )
@@ -426,9 +430,9 @@ function IdleView({
 
 function CapturingView() {
   return (
-    <div className="flex flex-col items-center gap-4 py-8">
-      <CapturingOrb />
-      <p className="text-sm font-semibold" style={{ color: "var(--neu-text2)" }}>
+    <div className="flex flex-col items-center gap-3 py-6">
+      <LoadingSpinner />
+      <p className="text-sm font-medium text-[var(--text-secondary)]">
         Nabbing…
       </p>
     </div>
@@ -489,38 +493,32 @@ function SuccessView({
       <div className="flex items-center gap-3">
         <StateBadge variant="success" />
         <div>
-          <p className="text-sm font-semibold" style={{ color: "var(--neu-success)" }}>
+          <p className="text-sm font-semibold text-[var(--success)]">
             Captured!
           </p>
-          <p className="text-[11px]" style={{ color: "var(--neu-text2)" }}>
+          <p className="text-[11px] text-[var(--text-secondary)]">
             {successLabel}
           </p>
         </div>
       </div>
 
       {/* Screenshot thumbnail */}
-      <div
-        className="overflow-hidden rounded-2xl"
-        style={{ boxShadow: "var(--shadow-raised-sm)" }}
-      >
+      <div className="overflow-hidden rounded-xl border border-[var(--border-primary)]">
         <img
           src={result.screenshot}
           alt="Captured screenshot"
           className={`w-full ${result.fullScreenshot ? "h-32 object-contain" : "h-32 object-cover object-top"}`}
-          style={result.fullScreenshot ? { background: "var(--neu-base)" } : undefined}
+          style={result.fullScreenshot ? { background: "var(--bg-secondary)" } : undefined}
         />
       </div>
 
       {/* Domain + stats */}
       <div>
-        <p
-          className="truncate text-sm font-semibold"
-          style={{ color: "var(--neu-text1)" }}
-        >
+        <p className="truncate text-sm font-semibold text-[var(--text-primary)]">
           {result.domain}
         </p>
         {statsLine && (
-          <p className="mt-0.5 text-[11px]" style={{ color: "var(--neu-text2)" }}>
+          <p className="mt-0.5 text-[11px] text-[var(--text-secondary)]">
             {statsLine}
           </p>
         )}
@@ -532,7 +530,7 @@ function SuccessView({
           onClick={handleCopyText}
           disabled={copiedBtn === "text"}
           copied={copiedBtn === "text"}
-          icon={<Copy size={12} />}
+          icon={<Clipboard size={12} />}
           label="Copy text"
         />
         <CopyActionButton
@@ -555,9 +553,9 @@ function SuccessView({
         />
       )}
 
-      <NeuButton fullWidth onClick={onCapture}>
+      <Button fullWidth onClick={onCapture}>
         Nab again
-      </NeuButton>
+      </Button>
     </div>
   )
 }
@@ -570,18 +568,18 @@ function ErrorView({ message, onRetry }: { message: string; onRetry: () => void 
       <div className="flex items-center gap-3">
         <StateBadge variant="error" />
         <div>
-          <p className="text-sm font-semibold" style={{ color: "var(--neu-error)" }}>
+          <p className="text-sm font-semibold text-[var(--error)]">
             Capture failed
           </p>
-          <p className="text-[11px] leading-snug" style={{ color: "var(--neu-text2)" }}>
+          <p className="text-[11px] leading-snug text-[var(--text-secondary)]">
             {message}
           </p>
         </div>
       </div>
 
-      <NeuButton fullWidth onClick={onRetry}>
+      <Button fullWidth onClick={onRetry}>
         Try again
-      </NeuButton>
+      </Button>
     </div>
   )
 }
@@ -590,10 +588,7 @@ function ErrorView({ message, onRetry }: { message: string; onRetry: () => void 
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p
-      className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest"
-      style={{ color: "var(--neu-text2)" }}
-    >
+    <p className="mb-1.5 text-[10px] font-medium uppercase tracking-widest text-[var(--text-secondary)]">
       {children}
     </p>
   )
@@ -615,23 +610,18 @@ function CopyActionButton({
   fullWidth?: boolean
 }) {
   return (
-    <motion.button
+    <button
       type="button"
       onClick={onClick}
       disabled={disabled}
-      whileTap={disabled ? undefined : { scale: 0.95 }}
-      transition={{ type: "spring", stiffness: 420, damping: 28 }}
-      className={`flex items-center justify-center gap-1.5 rounded-full py-2 px-3 text-xs font-medium outline-none ${fullWidth ? "w-full" : "flex-1"} ${disabled ? "opacity-50" : ""}`}
+      className={`flex items-center justify-center gap-1.5 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-secondary)] py-2 px-3 text-xs font-medium outline-none transition-all duration-150 hover:bg-[var(--bg-tertiary)] active:scale-[0.98] ${fullWidth ? "w-full" : "flex-1"} ${disabled ? "opacity-50" : ""}`}
       style={{
-        background: "var(--neu-base)",
-        boxShadow: "var(--shadow-raised-sm)",
-        color: copied ? "var(--neu-success)" : "var(--neu-text2)",
-        transition: "color 0.2s ease",
+        color: copied ? "var(--success)" : "var(--text-secondary)",
       }}
     >
       {icon}
       {copied ? "Copied!" : label}
-    </motion.button>
+    </button>
   )
 }
 

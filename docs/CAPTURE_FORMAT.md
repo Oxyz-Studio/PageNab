@@ -15,7 +15,7 @@ Chaque capture PageNab produit un ensemble de donnees structurees. Le contenu de
 | DOM | Non | Oui | Configurable |
 | Cookies | Non | Oui (sanitises) | Configurable |
 | LocalStorage / SessionStorage | Non | Oui | Configurable |
-| User interactions | Non | Oui | Configurable |
+| User interactions | Oui | Oui | Configurable |
 | Performance metrics | Non | Oui | Configurable |
 
 ## Donnees toujours capturees
@@ -38,6 +38,32 @@ Crop rectangulaire du screenshot full page, si mode area selectionne.
 - Taille typique : 10KB - 500KB
 - Destination : clipboard (image/png, prioritaire sur full page) + Downloads
 - Nommage : `pagenab-{domain}-{YYYY-MM-DD_HH-mm-ss}-area.png`
+
+### element screenshot (PNG, optionnel)
+
+Crop du screenshot full page correspondant au bounding rect de l'element selectionne, si mode element.
+
+- Taille typique : 5KB - 300KB
+- Destination : clipboard (image/png, prioritaire sur full page) + Downloads
+- Nommage : `pagenab-{domain}-{YYYY-MM-DD_HH-mm-ss}-element.png`
+
+### elementData (optionnel)
+
+Donnees de l'element selectionne, si mode element.
+
+```json
+{
+  "selector": "div.card > h2.title",
+  "tagName": "H2",
+  "dimensions": { "x": 100, "y": 200, "width": 400, "height": 50 },
+  "outerHTML": "<h2 class=\"title\">Dashboard</h2>"
+}
+```
+
+- `selector` : selecteur CSS de l'element
+- `tagName` : nom de la balise HTML
+- `dimensions` : position et taille de l'element (bounding rect)
+- `outerHTML` : HTML externe de l'element (tronque a 50KB)
 
 ### metadata
 

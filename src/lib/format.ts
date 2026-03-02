@@ -182,7 +182,7 @@ export function generateTextContent(input: FormatInput): string {
           log.source || log.line
             ? ` — \`${extractFile(log.source)}${log.line ? `:${log.line}` : ""}\``
             : ""
-        lines.push(`- **ERROR** ${truncate(log.message, 200)}${location}`)
+        lines.push(`- **ERROR** (${formatTime(log.timestamp)}) ${truncate(log.message, 200)}${location}`)
         if (log.stack) {
           lines.push(formatStack(log.stack, 3))
         }
@@ -190,17 +190,17 @@ export function generateTextContent(input: FormatInput): string {
 
       const warnings = input.console.logs.filter((l) => l.level === "warning").slice(0, 3)
       for (const warn of warnings) {
-        lines.push(`- **WARN** ${truncate(warn.message, 200)}`)
+        lines.push(`- **WARN** (${formatTime(warn.timestamp)}) ${truncate(warn.message, 200)}`)
       }
 
       const logEntries = input.console.logs.filter((l) => l.level === "log").slice(0, 10)
       for (const log of logEntries) {
-        lines.push(`- **LOG** ${truncate(log.message, 200)}`)
+        lines.push(`- **LOG** (${formatTime(log.timestamp)}) ${truncate(log.message, 200)}`)
       }
 
       const infoEntries = input.console.logs.filter((l) => l.level === "info").slice(0, 5)
       for (const info of infoEntries) {
-        lines.push(`- **INFO** ${truncate(info.message, 200)}`)
+        lines.push(`- **INFO** (${formatTime(info.timestamp)}) ${truncate(info.message, 200)}`)
       }
     }
   }
@@ -227,7 +227,7 @@ export function generateTextContent(input: FormatInput): string {
         const isSlow = !isFailed && req.duration > 3000
         const prefix = isFailed ? "**FAIL** " : isSlow ? "**SLOW** " : ""
         const sizeStr = req.size && req.size > 0 ? `, ${formatBytes(req.size)}` : ""
-        lines.push(`- ${prefix}\`${path}\` → ${req.status} (${req.duration}ms${sizeStr}, ${req.type})`)
+        lines.push(`- ${prefix}(${formatTime(req.timestamp)}) \`${path}\` → ${req.status} (${req.duration}ms${sizeStr}, ${req.type})`)
       }
       if (input.network.all.length > 50) {
         lines.push(`- ... and ${input.network.all.length - 50} more`)
@@ -249,12 +249,12 @@ export function generateTextContent(input: FormatInput): string {
 
         for (const req of input.network.failed.slice(0, 5)) {
           const path = extractPath(req.url)
-          lines.push(`- **FAIL** \`${path}\` → ${req.status} ${req.statusText} (${req.type})`)
+          lines.push(`- **FAIL** (${formatTime(req.timestamp)}) \`${path}\` → ${req.status} ${req.statusText} (${req.type})`)
         }
 
         for (const req of input.network.slow.slice(0, 3)) {
           const path = extractPath(req.url)
-          lines.push(`- **SLOW** \`${path}\` → ${req.status} (${req.duration}ms, ${req.type})`)
+          lines.push(`- **SLOW** (${formatTime(req.timestamp)}) \`${path}\` → ${req.status} (${req.duration}ms, ${req.type})`)
         }
       }
     }
