@@ -233,12 +233,12 @@ export async function capturePage(
           // Temporarily hide Chrome's download bubble during capture (Chrome 105+)
           await chrome.downloads.setUiOptions({ enabled: false }).catch(() => {})
           try {
-            const downloadTasks: Promise<unknown>[] = []
-            downloadTasks.push(
+            const downloadStarts: Promise<number>[] = []
+            downloadStarts.push(
               chrome.downloads.download({ url: screenshotDataUrl, filename, saveAs: false }),
             )
             if (areaScreenshotDataUrl && areaFilename) {
-              downloadTasks.push(
+              downloadStarts.push(
                 chrome.downloads.download({
                   url: areaScreenshotDataUrl,
                   filename: areaFilename,
@@ -247,7 +247,7 @@ export async function capturePage(
               )
             }
             if (elementScreenshotDataUrl && elementFilename) {
-              downloadTasks.push(
+              downloadStarts.push(
                 chrome.downloads.download({
                   url: elementScreenshotDataUrl,
                   filename: elementFilename,
@@ -255,7 +255,9 @@ export async function capturePage(
                 }),
               )
             }
-            await Promise.all(downloadTasks)
+            // Wait for all downloads to actually complete (not just initiate)
+            const ids = await Promise.all(downloadStarts)
+            await Promise.all(ids.map((id) => waitForDownloadComplete(id)))
           } finally {
             // Always restore Chrome's download bubble
             chrome.downloads.setUiOptions({ enabled: true }).catch(() => {})
@@ -343,6 +345,20 @@ export async function capturePage(
     const message = err instanceof Error ? err.message : "Unknown capture error"
     return { success: false, error: message }
   }
+}
+
+/** Wait for a download to reach a terminal state (complete or interrupted). */
+function waitForDownloadComplete(downloadId: number): Promise<void> {
+  return new Promise<void>((resolve) => {
+    const listener = (delta: chrome.downloads.DownloadDelta) => {
+      if (delta.id !== downloadId) return
+      if (delta.state?.current === "complete" || delta.state?.current === "interrupted") {
+        chrome.downloads.onChanged.removeListener(listener)
+        resolve()
+      }
+    }
+    chrome.downloads.onChanged.addListener(listener)
+  })
 }
 
 /**

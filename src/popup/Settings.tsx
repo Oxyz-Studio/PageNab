@@ -40,7 +40,7 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
             Keyboard shortcut
           </p>
           <div className="flex items-center gap-1">
-            {(settings.shortcut || "Ctrl+Shift+N").split("+").map((key, i) => (
+            {(settings.shortcut || (navigator.platform.includes("Mac") ? "⌘+Shift+E" : "Ctrl+Shift+E")).split("+").map((key, i) => (
               <span key={i} className="flex items-center gap-1">
                 {i > 0 && (
                   <span className="text-[10px] text-[var(--text-tertiary)]">+</span>

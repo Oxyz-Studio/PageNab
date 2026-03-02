@@ -19,7 +19,7 @@ export const DEFAULT_SETTINGS: Settings = {
   clipboardMode: "both",
   notifications: true,
   maxCaptures: 20,
-  shortcut: "Ctrl+Shift+N",
+  shortcut: "Ctrl+Shift+E",
 }
 
 export function generateScreenshotFilename(domain: string, isArea = false, isElement = false): string {

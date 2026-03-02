@@ -431,7 +431,7 @@ function IdleView({
 
       {/* Shortcut hint */}
       <div className="flex items-center justify-center gap-1">
-        {["Ctrl", "Shift", "N"].map((key, i) => (
+        {[navigator.platform.includes("Mac") ? "⌘" : "Ctrl", "Shift", "E"].map((key, i) => (
           <span key={key} className="flex items-center gap-1">
             {i > 0 && (
               <span className="text-[9px] text-[var(--text-tertiary)]">+</span>

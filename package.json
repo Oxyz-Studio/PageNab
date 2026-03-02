@@ -59,8 +59,8 @@
     "commands": {
       "capture-page": {
         "suggested_key": {
-          "default": "Ctrl+Shift+N",
-          "mac": "Command+Shift+N"
+          "default": "Ctrl+Shift+E",
+          "mac": "Command+Shift+E"
         },
         "description": "Capture the current page"
       }
