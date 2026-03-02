@@ -7,147 +7,43 @@
   <meta name="description" content="PageNab privacy policy. All data stays local. No tracking, no servers, no analytics.">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://oxyz-studio.github.io/PageNab/privacy-policy.html">
+
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
-    :root {
-      --color-bg: #ffffff;
-      --color-bg-alt: #f8f9fa;
-      --color-text: #1a1a2e;
-      --color-text-muted: #5a5a7a;
-      --color-primary: #4f46e5;
-      --color-primary-hover: #4338ca;
-      --color-border: #e2e4e9;
-      --color-accent-green: #059669;
-      --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      --max-width: 720px;
-      --space-xs: 0.5rem;
-      --space-sm: 1rem;
-      --space-md: 1.5rem;
-      --space-lg: 2.5rem;
-      --space-xl: 4rem;
-    }
-
-    body {
-      font-family: var(--font-body);
-      color: var(--color-text);
-      background: var(--color-bg);
-      line-height: 1.7;
-      font-size: 16px;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    a { color: var(--color-primary); text-decoration: none; }
-    a:hover { text-decoration: underline; }
-
-    .container {
-      max-width: var(--max-width);
-      margin: 0 auto;
-      padding: var(--space-xl) var(--space-md);
-    }
-
-    .back-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-      font-size: 0.9rem;
-      font-weight: 500;
-      margin-bottom: var(--space-lg);
-    }
-
-    h1 {
-      font-size: 2rem;
-      font-weight: 700;
-      line-height: 1.2;
-      margin-bottom: var(--space-xs);
-    }
-
-    .last-updated {
-      color: var(--color-text-muted);
-      font-size: 0.95rem;
-      margin-bottom: var(--space-xl);
-    }
-
-    h2 {
-      font-size: 1.35rem;
-      font-weight: 600;
-      margin-top: var(--space-lg);
-      margin-bottom: var(--space-sm);
-      line-height: 1.3;
-    }
-
-    p { margin-bottom: var(--space-sm); }
-
-    ul, ol {
-      margin-bottom: var(--space-sm);
-      padding-left: 1.5rem;
-    }
-    li { margin-bottom: 0.35rem; }
-    li strong { font-weight: 600; }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: var(--space-md);
-      font-size: 0.95rem;
-    }
-    th, td {
-      text-align: left;
-      padding: 0.65rem 0.8rem;
-      border-bottom: 1px solid var(--color-border);
-    }
-    th {
-      font-weight: 600;
-      background: var(--color-bg-alt);
-      font-size: 0.85rem;
-      text-transform: uppercase;
-      letter-spacing: 0.03em;
-      color: var(--color-text-muted);
-    }
-
-    .note {
-      background: var(--color-bg-alt);
-      border-left: 3px solid var(--color-primary);
-      padding: var(--space-sm) var(--space-md);
-      border-radius: 0 6px 6px 0;
-      margin-bottom: var(--space-md);
-      font-size: 0.95rem;
-    }
-    .note strong { font-weight: 600; }
-
-    code {
-      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-      background: var(--color-bg-alt);
-      padding: 0.15em 0.35em;
-      border-radius: 3px;
-      font-size: 0.88em;
-    }
-
-    footer {
-      margin-top: var(--space-xl);
-      padding-top: var(--space-md);
-      border-top: 1px solid var(--color-border);
-      font-size: 0.85rem;
-      color: var(--color-text-muted);
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      gap: var(--space-sm);
-    }
-    footer a { color: var(--color-text-muted); }
-    footer a:hover { color: var(--color-primary); }
-    .footer-links { display: flex; gap: var(--space-md); flex-wrap: wrap; }
-  </style>
+  <!-- Styles -->
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="container">
-    <a href="./" class="back-link">&larr; Back to PageNab</a>
+
+  <!-- Noise overlay -->
+  <div class="noise-overlay" aria-hidden="true"></div>
+
+  <!-- Nav -->
+  <nav class="nav scrolled" aria-label="Main navigation">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo" aria-label="PageNab home">Page<span class="accent">Nab</span></a>
+      <ul class="nav-links" role="list">
+        <li><a href="index.html#how-it-works">How It Works</a></li>
+        <li><a href="index.html#features">Features</a></li>
+        <li><a href="index.html#privacy">Privacy</a></li>
+        <li><a href="index.html#faq">FAQ</a></li>
+        <li><a href="https://github.com/Oxyz-Studio/PageNab" target="_blank" rel="noopener">GitHub</a></li>
+        <li><a href="#" class="nav-cta">Add to Chrome</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="pp-container">
+    <a href="./" class="pp-back">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      Back to PageNab
+    </a>
 
     <h1>Privacy Policy</h1>
-    <p class="last-updated">Last updated: March 2026</p>
+    <p class="pp-updated">Last updated: March 2026</p>
 
     <h2>Overview</h2>
     <p>PageNab is a Chrome extension that captures web page context (screenshots, console logs, network requests, DOM snapshots, cookies, storage, user interactions, performance metrics) and copies it to your clipboard for use with AI coding assistants. PageNab is designed with privacy as a core principle.</p>
@@ -220,7 +116,7 @@
       </tbody>
     </table>
 
-    <div class="note">
+    <div class="pp-note">
       <strong>Important:</strong> Cookies are read via <code>document.cookie</code> in the content script (non-httpOnly cookies only). PageNab does NOT use the <code>cookies</code> Chrome permission and cannot access httpOnly cookies.
     </div>
 
@@ -245,7 +141,7 @@
 
     <p>PageNab does <strong>not</strong> request:</p>
     <ul>
-      <li><code>&lt;all_urls&gt;</code> in permissions (the content script for interaction tracking uses <code>&lt;all_urls&gt;</code> in <code>content_scripts</code>, but this does not grant arbitrary access — it only runs the passive interaction tracker)</li>
+      <li><code>&lt;all_urls&gt;</code> in permissions (the content script for interaction tracking uses <code>&lt;all_urls&gt;</code> in <code>content_scripts</code>, but this does not grant arbitrary access)</li>
       <li><code>tabs</code> (no access to your tab list)</li>
       <li><code>history</code> (no access to your browsing history)</li>
       <li><code>cookies</code> (no access to httpOnly cookies via Chrome API)</li>
@@ -255,7 +151,7 @@
 
     <h2>Open Source</h2>
     <p>PageNab is fully open source under the MIT license:<br>
-    <a href="https://github.com/Oxyz-Studio/PageNab">https://github.com/Oxyz-Studio/PageNab</a></p>
+    <a href="https://github.com/Oxyz-Studio/PageNab" target="_blank" rel="noopener">https://github.com/Oxyz-Studio/PageNab</a></p>
 
     <h2>Children's Privacy</h2>
     <p>PageNab does not knowingly collect any information from children under 13.</p>
@@ -265,18 +161,19 @@
 
     <h2>Contact</h2>
     <ul>
-      <li>GitHub Issues: <a href="https://github.com/Oxyz-Studio/PageNab/issues">github.com/Oxyz-Studio/PageNab/issues</a></li>
+      <li>GitHub Issues: <a href="https://github.com/Oxyz-Studio/PageNab/issues" target="_blank" rel="noopener">github.com/Oxyz-Studio/PageNab/issues</a></li>
       <li>Email: <a href="mailto:contact@oxyz.fr">contact@oxyz.fr</a></li>
     </ul>
 
-    <footer>
-      <span>PageNab by <a href="https://oxyz.fr">Oxyz Studio</a></span>
-      <div class="footer-links">
+    <footer class="pp-footer">
+      <span>PageNab by <a href="https://oxyz.fr" target="_blank" rel="noopener">Oxyz Studio</a></span>
+      <div class="pp-footer-links">
         <a href="./">Home</a>
-        <a href="https://github.com/Oxyz-Studio/PageNab">GitHub</a>
-        <a href="https://github.com/Oxyz-Studio/PageNab/blob/main/LICENSE">MIT License</a>
+        <a href="https://github.com/Oxyz-Studio/PageNab" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/Oxyz-Studio/PageNab/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>
       </div>
     </footer>
   </div>
+
 </body>
 </html>
