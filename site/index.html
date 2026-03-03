@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PageNab — Capture Full Web Page Context for AI Assistants</title>
-  <meta name="description" content="One click captures everything your AI assistant needs to understand the page — screenshot, console, network, DOM, cookies, storage — copied to your clipboard.">
+  <title>PageNab — Screenshot With Context for AI Assistants</title>
+  <meta name="description" content="Chrome extension that takes a screenshot with full context — console, network, DOM, cookies, storage — and copies it to your clipboard for any AI assistant.">
   <meta name="keywords" content="Chrome extension, AI assistant, web page capture, debugging, screenshot, console logs, clipboard, developer tools">
 
   <!-- Open Graph -->
-  <meta property="og:title" content="PageNab — Capture Full Web Page Context for AI Assistants">
-  <meta property="og:description" content="One click. Full context. Screenshot + console + network + DOM — copied to your clipboard, ready to paste into Claude, ChatGPT, Cursor, or any AI assistant.">
+  <meta property="og:title" content="PageNab — Screenshot With Context for AI Assistants">
+  <meta property="og:description" content="One click. Screenshot + console + network + DOM — copied to your clipboard, ready to paste into any AI assistant.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://oxyz-studio.github.io/PageNab/">
   <meta property="og:image" content="https://oxyz-studio.github.io/PageNab/og-image.png">
@@ -18,8 +18,8 @@
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="PageNab — Full Web Page Context for AI">
-  <meta name="twitter:description" content="One click. Full context. Screenshot + console + network + DOM — copied to your clipboard for any AI assistant.">
+  <meta name="twitter:title" content="PageNab — Screenshot With Context for AI Assistants">
+  <meta name="twitter:description" content="One click. Screenshot + console + network + DOM — copied to your clipboard for any AI assistant.">
   <meta name="twitter:image" content="https://oxyz-studio.github.io/PageNab/og-image.png">
 
   <link rel="canonical" href="https://oxyz-studio.github.io/PageNab/">
@@ -30,13 +30,71 @@
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     "name": "PageNab",
-    "description": "Chrome extension that captures full web page context and copies it to your clipboard for AI coding assistants.",
+    "description": "Chrome extension that takes a screenshot with full context and copies it to your clipboard for any AI assistant.",
     "applicationCategory": "DeveloperApplication",
     "operatingSystem": "Chrome",
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
     "author": { "@type": "Organization", "name": "Oxyz Studio", "url": "https://oxyz.fr" },
     "license": "https://opensource.org/licenses/MIT",
     "url": "https://oxyz-studio.github.io/PageNab/"
+  }
+  </script>
+
+  <!-- FAQ JSON-LD for rich snippets -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "How do I capture console errors and network requests to share with an AI assistant?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Click the PageNab icon or press the keyboard shortcut. It captures a screenshot, console logs (errors, warnings, stack traces), failed and slow network requests, and page metadata — all in one click. Everything is copied to your clipboard as structured text + image. Just paste into any AI assistant. No need to open DevTools, no MCP server, no setup."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How is PageNab different from Chrome DevTools MCP?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Chrome DevTools MCP requires a running MCP server, JSON configuration, and an AI tool that supports the MCP protocol. PageNab is a standard Chrome extension: install it, click, paste. It works with any AI that accepts text and images from your clipboard — web apps, CLI tools, IDE extensions. Zero configuration, zero dependencies."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I use PageNab to debug a web app with ChatGPT, Claude, or Cursor?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. Capture your page, then paste — your AI gets the screenshot plus structured context: console errors, failed network requests, page metadata, and more. It works with ChatGPT, Claude, Gemini, Cursor, GitHub Copilot, Windsurf, Perplexity, and any tool that accepts text and images from the clipboard."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What sensitive data is stripped before capture?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Authorization headers, API keys, and tokens are automatically removed from network requests. Password fields are replaced with ***. Cookies with sensitive names (token, session, auth, secret) are masked. User input values in interactions are always hidden. Everything stays on your machine — nothing is sent to any server."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I capture a specific element or area instead of the full page?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. PageNab offers three capture modes: Full Page, Area (draw a rectangle to select a region), and Element (click to select a specific DOM element). The cropped screenshot and dev tools context are copied together. The full-page screenshot is also saved to your Downloads folder."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is PageNab free?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, 100% free and open source under the MIT license. No account required, no usage limits, no premium tier. The source code is on GitHub — you can audit every line."
+        }
+      }
+    ]
   }
   </script>
 
@@ -65,32 +123,32 @@
         <img src="logo.png" alt="PageNab" class="nav-logo-img">
       </a>
       <ul class="nav-links" role="list">
+        <li><a href="#how-it-works">How It Works</a></li>
+        <li><a href="#features">Features</a></li>
+        <li><a href="#presets">Presets</a></li>
+        <li><a href="#privacy">Privacy</a></li>
+        <li><a href="#faq">FAQ</a></li>
         <li><a href="https://github.com/Oxyz-Studio/PageNab" target="_blank" rel="noopener">GitHub</a></li>
-        <li><a href="privacy-policy.html">Privacy</a></li>
         <li><a href="#" class="nav-cta">Add to Chrome</a></li>
       </ul>
     </div>
   </nav>
 
   <!-- ═══════════════════════════════════════════════════════
-       2. HERO — with interactive preset tabs
+       2. HERO — value-prop first, with interactive preset tabs
   ════════════════════════════════════════════════════════ -->
   <section class="hero" id="hero" aria-label="Hero">
     <div class="container hero-inner">
       <div class="hero-content">
-        <div class="hero-eyebrow">Chrome Extension &nbsp;·&nbsp; Open Source &nbsp;·&nbsp; Free Forever</div>
+        <div class="hero-eyebrow">Open Source Chrome Extension</div>
 
-        <h1 class="hero-title" aria-label="PageNab">
-          <span class="hero-title-line hero-title-line-1">Page</span>
-          <span class="hero-title-line hero-title-line-2">
-            <span class="hero-nab-block">
-              <span class="hero-nab-text">Nab</span><span class="hero-nab-arrow" aria-hidden="true"><svg viewBox="0 0 5 5" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M0.91875 4.75L0 3.84318L2.55937 1.29545H0.437499V0H4.8125V4.31818H3.5V2.22386L0.91875 4.75Z" fill="#6366F1"/></svg></span>
-            </span>
-          </span>
+        <h1 class="hero-title" aria-label="One click. Full context.">
+          <span class="hero-title-line hero-title-line-1">One click.</span>
+          <span class="hero-title-line hero-title-line-2">Full context.</span>
         </h1>
 
         <p class="hero-subtitle">
-          One click captures everything your AI assistant needs to understand the page.
+          Screenshot + dev tools context, copied to your clipboard. Paste into <strong>any AI assistant</strong> — real answers, not guesses.
         </p>
 
         <div class="hero-actions">
@@ -107,55 +165,111 @@
           <span class="trust-item"><span class="trust-dot"></span>MIT License</span>
           <span class="trust-item"><span class="trust-dot"></span>No tracking</span>
           <span class="trust-item"><span class="trust-dot"></span>No servers</span>
-          <span class="trust-item"><span class="trust-dot"></span>Works with Claude, ChatGPT, Cursor &amp; more</span>
+          <span class="trust-item"><span class="trust-dot"></span>100% local</span>
         </div>
       </div>
 
-      <!-- Interactive code card with preset tabs -->
-      <div class="hero-card" aria-label="Interactive clipboard output preview">
+      <!-- Capture animation card -->
+      <div class="hero-card" aria-label="Capture animation preview">
         <div class="hero-card-header">
           <div class="hero-card-dots">
             <span></span><span></span><span></span>
           </div>
-          <div class="preset-tabs" role="tablist" aria-label="Preset selector">
-            <button class="preset-tab active" role="tab" aria-selected="true" data-preset="light">Light</button>
-            <button class="preset-tab" role="tab" aria-selected="false" data-preset="full">Full</button>
-            <button class="preset-tab" role="tab" aria-selected="false" data-preset="custom">Custom</button>
+          <span class="hero-card-label" id="hero-card-label">app.example.com/dashboard</span>
+        </div>
+
+        <div class="hero-card-scene">
+
+          <!-- Phase 1: Mock browser / website being captured -->
+          <div class="hc-browser" aria-hidden="true">
+            <div class="hc-browser-bar">
+              <div class="hc-url-bar">
+                <span class="hc-url-dot hc-url-dot--red"></span>
+                <span class="hc-url-text">app.example.com/dashboard</span>
+                <span class="hc-error-badge">2 errors</span>
+              </div>
+              <div class="hc-ext-area">
+                <button class="hc-ext-btn" tabindex="-1" aria-hidden="true">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                </button>
+              </div>
+            </div>
+            <div class="hc-browser-body">
+              <div class="hc-dash-nav">
+                <div class="hc-dash-brand"></div>
+                <span class="hc-dash-title">Dashboard</span>
+                <div class="hc-dash-nav-right">
+                  <span class="hc-dash-err-pill">⚠ 2 errors</span>
+                </div>
+              </div>
+              <div class="hc-dash-stats">
+                <div class="hc-stat-card">
+                  <div class="hc-stat-label">Revenue</div>
+                  <div class="hc-stat-value">$12,480</div>
+                </div>
+                <div class="hc-stat-card">
+                  <div class="hc-stat-label">Requests</div>
+                  <div class="hc-stat-value hc-stat-value--err">42 ↑</div>
+                </div>
+                <div class="hc-stat-card">
+                  <div class="hc-stat-label">Users</div>
+                  <div class="hc-stat-value">1,024</div>
+                </div>
+              </div>
+              <div class="hc-dash-error-panel">
+                <span class="hc-err-dot"></span>
+                <span class="hc-err-text">TypeError: Cannot read property 'map' of undefined — Dashboard.tsx:47</span>
+              </div>
+              <div class="hc-dash-chart">
+                <div class="hc-bar" style="height:40%"></div>
+                <div class="hc-bar" style="height:64%"></div>
+                <div class="hc-bar hc-bar--fail" style="height:26%"></div>
+                <div class="hc-bar" style="height:78%"></div>
+                <div class="hc-bar" style="height:52%"></div>
+                <div class="hc-bar" style="height:88%"></div>
+                <div class="hc-bar hc-bar--fail" style="height:18%"></div>
+                <div class="hc-bar" style="height:66%"></div>
+              </div>
+            </div>
+            <!-- Animated cursor that "clicks" the extension -->
+            <div class="hc-cursor" aria-hidden="true">
+              <svg width="14" height="18" viewBox="0 0 14 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M2 1.5 L2 14.5 L5.5 11 L8 17.5 L10 16.5 L7.5 10 L12.5 10 Z" fill="white" stroke="rgba(0,0,0,0.55)" stroke-width="0.9" stroke-linejoin="round"/>
+              </svg>
+            </div>
           </div>
-          <span class="preset-tokens" id="preset-tokens">~200–500 tokens + screenshot</span>
-        </div>
-        <div class="custom-toggles" id="custom-toggles" hidden>
-          <button class="toggle-item active" data-toggle="console">Console</button>
-          <button class="toggle-item active" data-toggle="network">Network</button>
-          <button class="toggle-item" data-toggle="cookies">Cookies</button>
-          <button class="toggle-item" data-toggle="storage">Storage</button>
-          <button class="toggle-item" data-toggle="performance">Performance</button>
-          <button class="toggle-item" data-toggle="interactions">Interactions</button>
-          <button class="toggle-item" data-toggle="dom">DOM</button>
-        </div>
-        <div class="hero-card-body">
-          <pre id="preset-output"><span class="code-h"># Web page capture</span>
 
-<span class="code-k">**URL:**</span> https://app.example.com/dashboard
-<span class="code-k">**Title:**</span> Dashboard — MyApp
-<span class="code-k">**Time:**</span> 2026-03-01 14:23:45
-<span class="code-k">**Viewport:**</span> 1920×1080
+          <!-- Phase 2: Screenshot flash overlay -->
+          <div class="hc-flash" aria-hidden="true"></div>
 
-<span class="code-h">## Console</span>
-2 errors, 1 warning
-- <span class="code-e">**ERROR**</span> TypeError: Cannot read property 'map' of undefined — Dashboard.tsx:47
-- <span class="code-e">**ERROR**</span> GET /api/users 500 (Internal Server Error)
+          <!-- Phase 3: Terminal output (context sent to clipboard) -->
+          <div class="hc-terminal" aria-hidden="true">
+            <div class="hc-term-lines">
+              <span class="hc-line"><span class="code-h"># Web page capture</span></span>
+              <span class="hc-line hc-line-blank"> </span>
+              <span class="hc-line"><span class="code-k">**URL:**</span> https://app.example.com/dashboard</span>
+              <span class="hc-line"><span class="code-k">**Title:**</span> Dashboard — MyApp</span>
+              <span class="hc-line"><span class="code-k">**Time:**</span> 2026-03-01 14:23:45</span>
+              <span class="hc-line"><span class="code-k">**Viewport:**</span> 1920×1080</span>
+              <span class="hc-line hc-line-blank"> </span>
+              <span class="hc-line"><span class="code-h">## Console</span></span>
+              <span class="hc-line">2 errors, 1 warning</span>
+              <span class="hc-line">- <span class="code-e">**ERROR**</span> TypeError: Cannot read 'map' of undefined</span>
+              <span class="hc-line">- <span class="code-e">**ERROR**</span> GET /api/users 500 (Internal Server Error)</span>
+              <span class="hc-line hc-line-blank"> </span>
+              <span class="hc-line"><span class="code-h">## Network</span></span>
+              <span class="hc-line">42 requests, 2 failed</span>
+              <span class="hc-line">- <span class="code-f">**FAIL**</span> <span class="code-p">`/api/users`</span> → 500 Internal Server Error</span>
+              <span class="hc-line">- <span class="code-f">**FAIL**</span> <span class="code-p">`/api/stats`</span> → 403 Forbidden</span>
+              <span class="hc-line hc-line-blank"> </span>
+              <span class="hc-line"><span class="code-h">## Screenshot</span></span>
+              <span class="hc-line"><span class="code-p">`~/Downloads/PageNab_dashboard_….png`</span></span>
+              <span class="hc-line"><span class="code-g">✓ Copied to clipboard</span><span class="hc-blink-cursor">▌</span></span>
+            </div>
+          </div>
 
-<span class="code-h">## Network</span>
-42 requests, 2 failed
-- <span class="code-f">**FAIL**</span> <span class="code-p">`/api/users`</span> → 500 Internal Server Error
-- <span class="code-f">**FAIL**</span> <span class="code-p">`/api/stats`</span> → 403 Forbidden
-
-<span class="code-h">## Screenshot</span>
-<span class="code-p">`~/Downloads/PageNab_…png`</span>
-<span class="code-g">✓ Copied to clipboard</span></pre>
-        </div>
-      </div>
+        </div><!-- /hero-card-scene -->
+      </div><!-- /hero-card -->
     </div>
 
     <!-- Scroll hint -->
@@ -166,7 +280,41 @@
   </section>
 
   <!-- ═══════════════════════════════════════════════════════
-       3. HOW IT WORKS — horizontal strip
+       3. WORKS WITH — scrolling AI tool marquee
+  ════════════════════════════════════════════════════════ -->
+  <div class="works-with-strip" aria-label="Works with every AI assistant">
+    <div class="container works-with-inner">
+      <span class="works-with-label">Works with every AI —</span>
+      <div class="works-marquee-wrap">
+        <div class="works-marquee" aria-hidden="true">
+          <span class="ai-pill">Claude</span>
+          <span class="ai-pill">ChatGPT</span>
+          <span class="ai-pill">Gemini</span>
+          <span class="ai-pill">Cursor</span>
+          <span class="ai-pill">GitHub Copilot</span>
+          <span class="ai-pill">Perplexity</span>
+          <span class="ai-pill">Grok</span>
+          <span class="ai-pill">Windsurf</span>
+          <span class="ai-pill">Mistral</span>
+          <span class="ai-pill">DeepSeek</span>
+          <!-- Duplicate for seamless loop -->
+          <span class="ai-pill">Claude</span>
+          <span class="ai-pill">ChatGPT</span>
+          <span class="ai-pill">Gemini</span>
+          <span class="ai-pill">Cursor</span>
+          <span class="ai-pill">GitHub Copilot</span>
+          <span class="ai-pill">Perplexity</span>
+          <span class="ai-pill">Grok</span>
+          <span class="ai-pill">Windsurf</span>
+          <span class="ai-pill">Mistral</span>
+          <span class="ai-pill">DeepSeek</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       4. HOW IT WORKS — horizontal strip
   ════════════════════════════════════════════════════════ -->
   <section id="how-it-works" aria-labelledby="how-heading">
     <div class="container">
@@ -189,7 +337,7 @@
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
           </div>
           <h3>Clipboard</h3>
-          <p>Screenshot + structured text copied</p>
+          <p>Screenshot + structured text copied instantly</p>
         </div>
 
         <div class="how-arrow" aria-hidden="true">→</div>
@@ -199,14 +347,14 @@
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           </div>
           <h3>Paste</h3>
-          <p>Full context arrives in your AI assistant</p>
+          <p>Screenshot + context in any AI assistant</p>
         </div>
       </div>
     </div>
   </section>
 
   <!-- ═══════════════════════════════════════════════════════
-       4. WHAT GETS CAPTURED — compact 3×2 grid
+       5. WHAT GETS CAPTURED — compact 4×2 grid + SVG icons
   ════════════════════════════════════════════════════════ -->
   <section class="bg-alt" id="features" aria-labelledby="features-heading">
     <div class="container">
@@ -215,60 +363,87 @@
 
       <div class="capture-grid" data-stagger>
         <article class="capture-item">
-          <span class="capture-icon" aria-hidden="true">📸</span>
+          <span class="capture-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          </span>
           <div>
             <h3>Screenshots</h3>
-            <p>Full page, area, or element. Saved to Downloads and pasted as image.</p>
+            <p>Full page, area selection, or element capture. Saved to Downloads and pasted as image.</p>
           </div>
         </article>
         <article class="capture-item">
-          <span class="capture-icon" aria-hidden="true">💻</span>
+          <span class="capture-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+          </span>
           <div>
             <h3>Console Logs</h3>
             <p>Errors, warnings, all levels with stack traces.</p>
           </div>
         </article>
         <article class="capture-item">
-          <span class="capture-icon" aria-hidden="true">🌐</span>
+          <span class="capture-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </span>
           <div>
             <h3>Network</h3>
             <p>Failed and slow requests, auto-stripped auth headers.</p>
           </div>
         </article>
         <article class="capture-item">
-          <span class="capture-icon" aria-hidden="true">📄</span>
+          <span class="capture-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          </span>
           <div>
             <h3>DOM Snapshot</h3>
             <p>Clean HTML, inline scripts removed, passwords masked.</p>
           </div>
         </article>
         <article class="capture-item">
-          <span class="capture-icon" aria-hidden="true">💾</span>
+          <span class="capture-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+          </span>
           <div>
             <h3>Storage &amp; Cookies</h3>
             <p>localStorage, sessionStorage, cookies. Sensitive values masked.</p>
           </div>
         </article>
         <article class="capture-item">
-          <span class="capture-icon" aria-hidden="true">⚡</span>
+          <span class="capture-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          </span>
           <div>
             <h3>Performance</h3>
             <p>Core Web Vitals, load times, memory usage.</p>
           </div>
         </article>
+        <article class="capture-item">
+          <span class="capture-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3l14 9-7 1-4 7-3-17z"/></svg>
+          </span>
+          <div>
+            <h3>Interactions</h3>
+            <p>Recent clicks, inputs, scrolls. Values masked.</p>
+          </div>
+        </article>
+        <article class="capture-item">
+          <span class="capture-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+          </span>
+          <div>
+            <h3>Metadata</h3>
+            <p>URL, title, viewport, timestamp. Always included.</p>
+          </div>
+        </article>
       </div>
 
-      <p class="capture-modes-line reveal">
-        <strong>Three capture modes:</strong> Full Page · Area Selection · Element Selection
-      </p>
       <p class="compat-line reveal">
-        <strong>Works with:</strong> Claude Code · Claude.ai · ChatGPT · Cursor · Windsurf · GitHub Copilot · Gemini · and more
+        Works with <strong>every AI assistant</strong> — paste and go.
       </p>
     </div>
   </section>
 
   <!-- ═══════════════════════════════════════════════════════
-       5. PRIVACY
+       6. PRIVACY — moved up for stronger trust signal
   ════════════════════════════════════════════════════════ -->
   <section id="privacy" aria-labelledby="privacy-heading">
     <div class="container">
@@ -289,7 +464,7 @@
           <span class="stat-label">No analytics, telemetry, or logging</span>
         </div>
         <div class="stat-card">
-          <span class="stat-number" style="font-size:clamp(1.8rem,3vw,2.8rem)">MIT</span>
+          <span class="stat-number stat-number--sm">MIT</span>
           <span class="stat-label">Open source — audit every line</span>
         </div>
       </div>
@@ -305,9 +480,71 @@
   </section>
 
   <!-- ═══════════════════════════════════════════════════════
-       6. FAQ
+       7. PRESETS — interactive examples
   ════════════════════════════════════════════════════════ -->
-  <section class="section-faq bg-alt" id="faq" aria-labelledby="faq-heading">
+  <section class="bg-alt" id="presets" aria-labelledby="presets-heading">
+    <div class="container">
+      <div class="section-tag reveal">Presets</div>
+      <h2 data-split id="presets-heading">Choose your level of detail.</h2>
+
+      <div class="presets-layout">
+        <div class="presets-grid">
+          <article class="preset-card active" role="tab" aria-selected="true" data-preset-card="light" tabindex="0">
+            <h3>Light <span class="preset-badge">Default</span></h3>
+            <p>Screenshot + console errors + failed requests.</p>
+            <span class="preset-token-hint">~200–500 tokens</span>
+          </article>
+
+          <article class="preset-card" role="tab" aria-selected="false" data-preset-card="full" tabindex="0">
+            <h3>Full <span class="preset-badge">Everything</span></h3>
+            <p>Console, network, DOM, cookies, storage, perf.</p>
+            <span class="preset-token-hint">~1.5K–150K tokens</span>
+          </article>
+
+          <article class="preset-card" role="tab" aria-selected="false" data-preset-card="custom" tabindex="0">
+            <h3>Custom <span class="preset-badge">Your pick</span></h3>
+            <p>Choose exactly which data types to include.</p>
+            <span class="preset-token-hint">You decide</span>
+          </article>
+        </div>
+
+        <!-- Preset example output (dark terminal) -->
+        <div class="preset-example" aria-label="Preset clipboard output example">
+        <div class="preset-example-header">
+          <div class="hero-card-dots"><span></span><span></span><span></span></div>
+          <span class="preset-example-label" id="preset-example-label">Light preset — clipboard output</span>
+        </div>
+        <div class="preset-example-body">
+          <pre id="preset-example-output"><span class="code-h"># Web page capture</span>
+
+<span class="code-k">**URL:**</span> https://app.example.com/dashboard
+<span class="code-k">**Title:**</span> Dashboard — MyApp
+<span class="code-k">**Time:**</span> 2026-03-01 14:23:45
+<span class="code-k">**Viewport:**</span> 1920×1080
+
+<span class="code-h">## Console</span>
+2 errors, 1 warning
+- <span class="code-e">**ERROR**</span> TypeError: Cannot read property 'map' of undefined — Dashboard.tsx:47
+- <span class="code-e">**ERROR**</span> GET /api/users 500 (Internal Server Error)
+
+<span class="code-h">## Network</span>
+42 requests, 2 failed
+- <span class="code-f">**FAIL**</span> <span class="code-p">`/api/users`</span> → 500 Internal Server Error
+- <span class="code-f">**FAIL**</span> <span class="code-p">`/api/stats`</span> → 403 Forbidden
+
+<span class="code-h">## Screenshot</span>
+<span class="code-p">`~/Downloads/PageNab_dashboard_….png`</span>
+<span class="code-g">✓ Copied to clipboard</span></pre>
+        </div>
+      </div>
+      </div><!-- /presets-layout -->
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════
+       8. FAQ
+  ════════════════════════════════════════════════════════ -->
+  <section class="section-faq" id="faq" aria-labelledby="faq-heading">
     <div class="container">
       <div class="section-tag reveal" style="margin:0 auto var(--space-sm);display:table">FAQ</div>
       <h2 data-split style="text-align:center;margin-bottom:var(--space-xl)" id="faq-heading">Frequently asked.</h2>
@@ -315,49 +552,73 @@
       <div class="faq-list" role="list">
         <div class="faq-item" role="listitem">
           <div class="faq-question" role="button" tabindex="0" aria-expanded="false">
-            <h3>Does PageNab send my data anywhere?</h3>
+            <h3><span class="faq-num">01</span>How do I capture console errors and network requests to share with an AI assistant?</h3>
             <div class="faq-chevron" aria-hidden="true">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             </div>
           </div>
           <div class="faq-answer">
-            <p>No. PageNab is 100% local. Captured data goes to your clipboard and your Downloads folder. Nothing is sent to any server. There is no analytics, no telemetry, no tracking.</p>
+            <p>Click the PageNab icon or press the keyboard shortcut. It captures a screenshot, console logs (errors, warnings, stack traces), failed and slow network requests, and page metadata — all in one click. Everything is copied to your clipboard as structured text + image. Just paste into any AI assistant. No need to open DevTools, no MCP server, no setup.</p>
           </div>
         </div>
 
         <div class="faq-item" role="listitem">
           <div class="faq-question" role="button" tabindex="0" aria-expanded="false">
-            <h3>What about sensitive data like passwords and tokens?</h3>
+            <h3><span class="faq-num">02</span>How is PageNab different from Chrome DevTools MCP?</h3>
             <div class="faq-chevron" aria-hidden="true">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             </div>
           </div>
           <div class="faq-answer">
-            <p>PageNab automatically sanitizes sensitive data before capture. Authorization headers, API keys, and tokens are stripped from network requests. Password field values are replaced with ***. Cookie values with sensitive names (token, session, auth, key, secret, password) are masked. Input field values in interactions are always masked.</p>
+            <p>Chrome DevTools MCP requires a running MCP server, JSON configuration, and an AI tool that supports the MCP protocol. PageNab is a standard Chrome extension: install it, click, paste. It works with any AI that accepts text and images from your clipboard — web apps, CLI tools, IDE extensions. Zero configuration, zero dependencies.</p>
           </div>
         </div>
 
         <div class="faq-item" role="listitem">
           <div class="faq-question" role="button" tabindex="0" aria-expanded="false">
-            <h3>What's the difference between the three presets?</h3>
+            <h3><span class="faq-num">03</span>Can I use PageNab to debug a web app with ChatGPT, Claude, or Cursor?</h3>
             <div class="faq-chevron" aria-hidden="true">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             </div>
           </div>
           <div class="faq-answer">
-            <p><strong>Light (default):</strong> screenshot + metadata + console errors/warnings + failed network requests (~200–500 tokens). <strong>Full:</strong> everything including DOM, cookies, storage, interactions, performance (~1.5K–150K tokens). <strong>Custom:</strong> you choose exactly which data types to include.</p>
+            <p>Yes. Capture your page, then paste — your AI gets the screenshot plus structured context: console errors, failed network requests, page metadata, and more. It works with ChatGPT, Claude, Gemini, Cursor, GitHub Copilot, Windsurf, Perplexity, and any tool that accepts text and images from the clipboard.</p>
           </div>
         </div>
 
         <div class="faq-item" role="listitem">
           <div class="faq-question" role="button" tabindex="0" aria-expanded="false">
-            <h3>Which AI assistants work with PageNab?</h3>
+            <h3><span class="faq-num">04</span>What sensitive data is stripped before capture?</h3>
             <div class="faq-chevron" aria-hidden="true">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             </div>
           </div>
           <div class="faq-answer">
-            <p>Any assistant that accepts text and images from the clipboard. This includes Claude Code (CLI), Claude.ai, ChatGPT, Cursor, Windsurf, GitHub Copilot, and more. When you paste, both the text data and the screenshot image are attached.</p>
+            <p>Authorization headers, API keys, and tokens are automatically removed from network requests. Password fields are replaced with ***. Cookies with sensitive names (token, session, auth, secret) are masked. User input values in interactions are always hidden. Everything stays on your machine — nothing is sent to any server.</p>
+          </div>
+        </div>
+
+        <div class="faq-item" role="listitem">
+          <div class="faq-question" role="button" tabindex="0" aria-expanded="false">
+            <h3><span class="faq-num">05</span>Can I capture a specific element or area instead of the full page?</h3>
+            <div class="faq-chevron" aria-hidden="true">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </div>
+          </div>
+          <div class="faq-answer">
+            <p>Yes. PageNab offers three capture modes: Full Page, Area (draw a rectangle to select a region), and Element (click to select a specific DOM element). The cropped screenshot and dev tools context are copied together. The full-page screenshot is also saved to your Downloads folder.</p>
+          </div>
+        </div>
+
+        <div class="faq-item" role="listitem">
+          <div class="faq-question" role="button" tabindex="0" aria-expanded="false">
+            <h3><span class="faq-num">06</span>Is PageNab free?</h3>
+            <div class="faq-chevron" aria-hidden="true">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </div>
+          </div>
+          <div class="faq-answer">
+            <p>Yes, 100% free and open source under the MIT license. No account required, no usage limits, no premium tier. The source code is on GitHub — you can audit every line.</p>
           </div>
         </div>
       </div>
@@ -365,13 +626,13 @@
   </section>
 
   <!-- ═══════════════════════════════════════════════════════
-       7. CTA + FOOTER (merged)
+       9. CTA + FOOTER (merged)
   ════════════════════════════════════════════════════════ -->
   <section class="section-cta" id="cta" aria-labelledby="cta-heading">
     <div class="cta-bg" aria-hidden="true"></div>
     <div class="container cta-content">
       <p class="cta-eyebrow">Get Started Now</p>
-      <h2 class="cta-tagline" id="cta-heading" data-split>Stop copy-pasting. Start shipping.</h2>
+      <h2 class="cta-tagline" id="cta-heading" data-split>Less debugging. More shipping.</h2>
       <div class="cta-actions">
         <a href="#" class="btn btn-primary btn-xl btn-magnetic">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
