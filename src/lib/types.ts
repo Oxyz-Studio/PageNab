@@ -68,6 +68,7 @@ export interface ConsoleData {
 // === Network ===
 export interface NetworkRequest {
   url: string
+  method?: string
   status: number
   statusText: string
   type: string
@@ -77,6 +78,8 @@ export interface NetworkRequest {
   requestHeaders: Record<string, string>
   responseHeaders: Record<string, string>
   responseBody?: string
+  requestBodyPreview?: string
+  responseBodyPreview?: string
   initiator?: string
 }
 

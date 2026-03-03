@@ -37,14 +37,35 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(0)} MB`
 }
 
-export function extractFile(source?: string): string {
+export function extractSourcePath(source?: string): string {
   if (!source) return ""
   try {
     const url = new URL(source)
-    return url.pathname.split("/").pop() ?? source
+    return url.pathname + (url.hash || "")
   } catch {
     return source
   }
+}
+
+const ALL_DATA_TYPES = ["screenshot", "console", "network", "dom", "cookies", "storage", "performance", "interactions"]
+
+export function parseBrowserInfo(userAgent: string): string {
+  let browser = "Unknown"
+  let os = "Unknown"
+
+  if (/Edg\/(\d+)/.test(userAgent)) browser = `Edge ${RegExp.$1}`
+  else if (/OPR\/(\d+)/.test(userAgent)) browser = `Opera ${RegExp.$1}`
+  else if (/Chrome\/(\d+)/.test(userAgent)) browser = `Chrome ${RegExp.$1}`
+  else if (/Firefox\/(\d+)/.test(userAgent)) browser = `Firefox ${RegExp.$1}`
+  else if (/Safari\/(\d+)/.test(userAgent) && /Version\/(\d+)/.test(userAgent)) browser = `Safari ${RegExp.$1}`
+
+  if (/Mac OS X/.test(userAgent)) os = "macOS"
+  else if (/Windows/.test(userAgent)) os = "Windows"
+  else if (/Linux/.test(userAgent)) os = "Linux"
+  else if (/Android/.test(userAgent)) os = "Android"
+  else if (/iOS|iPhone|iPad/.test(userAgent)) os = "iOS"
+
+  return `${browser} (${os})`
 }
 
 function formatStack(stack: string, maxLines: number): string {
@@ -107,6 +128,23 @@ export function generateTextContent(input: FormatInput): string {
   lines.push(`**Time:** ${formatDate(m.timestamp)}`)
   lines.push(`**Viewport:** ${m.viewport.width}x${m.viewport.height}`)
   lines.push(`**Language:** ${m.language}`)
+  lines.push(`**Browser:** ${parseBrowserInfo(m.userAgent)}`)
+  lines.push(`**Color scheme:** ${m.colorScheme}`)
+  lines.push(`**Capture mode:** ${m.captureMode} | Preset: ${m.preset}`)
+
+  // Build includes/excludes from capturedData
+  const includes = ["screenshot", ...m.capturedData]
+  if (m.preset === "light" && captured.has("console")) {
+    includes[includes.indexOf("console")] = "console (errors only)"
+  }
+  if (m.preset === "light" && captured.has("network")) {
+    includes[includes.indexOf("network")] = "network (failed only)"
+  }
+  const excludes = ALL_DATA_TYPES.filter((t) => t === "screenshot" ? false : !captured.has(t))
+  lines.push(`**Includes:** ${includes.join(", ")}`)
+  if (excludes.length > 0) {
+    lines.push(`**Excludes:** ${excludes.join(", ")}`)
+  }
 
   // Selected Element (before Console — primary data in element mode)
   if (captured.has("element") && input.element) {
@@ -132,19 +170,10 @@ export function generateTextContent(input: FormatInput): string {
     if (styleEntries.length > 0) {
       lines.push("")
       lines.push("### Styles")
-      lines.push("```")
-      // Group styles into lines of ~80 chars
-      let currentLine = ""
+      lines.push("```css")
       for (const [prop, val] of styleEntries) {
-        const entry = `${prop}: ${val}`
-        if (currentLine.length > 0 && currentLine.length + entry.length + 2 > 80) {
-          lines.push(currentLine)
-          currentLine = entry
-        } else {
-          currentLine = currentLine ? `${currentLine}; ${entry}` : entry
-        }
+        lines.push(`${prop}: ${val};`)
       }
-      if (currentLine) lines.push(currentLine)
       lines.push("```")
     }
 
@@ -181,7 +210,7 @@ export function generateTextContent(input: FormatInput): string {
         for (const log of errors) {
           const location =
             log.source || log.line
-              ? ` — \`${extractFile(log.source)}${log.line ? `:${log.line}` : ""}\``
+              ? ` — \`${extractSourcePath(log.source)}${log.line ? `:${log.line}` : ""}\``
               : ""
           lines.push(`- **ERROR** (${formatTime(log.timestamp)}) ${truncate(log.message, 200)}${location}`)
           if (log.stack) {
@@ -196,6 +225,8 @@ export function generateTextContent(input: FormatInput): string {
       if (s.warnings > 0) parts.push(`${s.warnings} warning${s.warnings !== 1 ? "s" : ""}`)
       if (s.logs > 0) parts.push(`${s.logs} log${s.logs !== 1 ? "s" : ""}`)
       if (s.info > 0) parts.push(`${s.info} info`)
+      const debugCount = input.console.logs.filter((l) => l.level === "debug").length
+      if (debugCount > 0) parts.push(`${debugCount} debug`)
 
       if (parts.length === 0) {
         lines.push("No console output.")
@@ -207,7 +238,7 @@ export function generateTextContent(input: FormatInput): string {
         for (const log of errors) {
           const location =
             log.source || log.line
-              ? ` — \`${extractFile(log.source)}${log.line ? `:${log.line}` : ""}\``
+              ? ` — \`${extractSourcePath(log.source)}${log.line ? `:${log.line}` : ""}\``
               : ""
           lines.push(`- **ERROR** (${formatTime(log.timestamp)}) ${truncate(log.message, 200)}${location}`)
           if (log.stack) {
@@ -228,6 +259,11 @@ export function generateTextContent(input: FormatInput): string {
         const infoEntries = input.console.logs.filter((l) => l.level === "info").slice(0, 5)
         for (const info of infoEntries) {
           lines.push(`- **INFO** (${formatTime(info.timestamp)}) ${truncate(info.message, 200)}`)
+        }
+
+        const debugEntries = input.console.logs.filter((l) => l.level === "debug").slice(0, 5)
+        for (const dbg of debugEntries) {
+          lines.push(`- **DEBUG** (${formatTime(dbg.timestamp)}) ${truncate(dbg.message, 200)}`)
         }
       }
     }
@@ -251,11 +287,17 @@ export function generateTextContent(input: FormatInput): string {
 
       for (const req of input.network.all.slice(0, 50)) {
         const path = extractPath(req.url)
+        const method = req.method ?? ""
         const isFailed = req.status >= 400
         const isSlow = !isFailed && req.duration > 3000
         const prefix = isFailed ? "**FAIL** " : isSlow ? "**SLOW** " : ""
+        const methodStr = method ? `${method} ` : ""
         const sizeStr = req.size && req.size > 0 ? `, ${formatBytes(req.size)}` : ""
-        lines.push(`- ${prefix}(${formatTime(req.timestamp)}) \`${path}\` → ${req.status} (${req.duration}ms${sizeStr}, ${req.type})`)
+        lines.push(`- ${prefix}${methodStr}\`${path}\` → ${req.status} (${req.duration}ms${sizeStr}, ${req.type})`)
+        if (isFailed) {
+          if (req.requestBodyPreview) lines.push(`  Request: ${truncate(req.requestBodyPreview, 200)}`)
+          if (req.responseBodyPreview) lines.push(`  Response: ${truncate(req.responseBodyPreview, 200)}`)
+        }
       }
       if (input.network.all.length > 50) {
         lines.push(`- ... and ${input.network.all.length - 50} more`)
@@ -277,12 +319,18 @@ export function generateTextContent(input: FormatInput): string {
 
         for (const req of input.network.failed.slice(0, 5)) {
           const path = extractPath(req.url)
-          lines.push(`- **FAIL** (${formatTime(req.timestamp)}) \`${path}\` → ${req.status} ${req.statusText} (${req.type})`)
+          const method = req.method ?? ""
+          const methodStr = method ? `${method} ` : ""
+          lines.push(`- **FAIL** ${methodStr}\`${path}\` → ${req.status} ${req.statusText} (${req.type}, ${req.duration}ms)`)
+          if (req.requestBodyPreview) lines.push(`  Request: ${truncate(req.requestBodyPreview, 200)}`)
+          if (req.responseBodyPreview) lines.push(`  Response: ${truncate(req.responseBodyPreview, 200)}`)
         }
 
         for (const req of input.network.slow.slice(0, 3)) {
           const path = extractPath(req.url)
-          lines.push(`- **SLOW** (${formatTime(req.timestamp)}) \`${path}\` → ${req.status} (${req.duration}ms, ${req.type})`)
+          const method = req.method ?? ""
+          const methodStr = method ? `${method} ` : ""
+          lines.push(`- **SLOW** ${methodStr}\`${path}\` → ${req.status} (${req.duration}ms, ${req.type})`)
         }
       }
     }
@@ -293,10 +341,17 @@ export function generateTextContent(input: FormatInput): string {
     lines.push("")
     lines.push("## Cookies")
     lines.push("")
-    lines.push(`${input.cookies.summary.total} cookies`)
-    lines.push("")
-    for (const c of input.cookies.cookies) {
-      lines.push(`- ${c.name}: \`${c.value}\``)
+    const cookies = input.cookies.cookies
+    if (cookies.length === 0) {
+      lines.push("No cookies.")
+    } else if (cookies.length < 10) {
+      lines.push(cookies.map((c) => `${c.name}=${c.value}`).join(" | "))
+    } else {
+      lines.push(`${input.cookies.summary.total} cookies`)
+      lines.push("")
+      for (const c of cookies) {
+        lines.push(`- ${c.name}: \`${c.value}\``)
+      }
     }
   }
 
@@ -323,10 +378,9 @@ export function generateTextContent(input: FormatInput): string {
     lines.push("## Performance")
     lines.push("")
     const p = input.performance
+    lines.push(`- FP: ${p.firstPaint}ms | FCP: ${p.firstContentfulPaint}ms | LCP: ${p.largestContentfulPaint}ms`)
     lines.push(`- Load: ${p.loadTime}ms | DOMContentLoaded: ${p.domContentLoaded}ms`)
-    lines.push(
-      `- LCP: ${p.largestContentfulPaint}ms | CLS: ${p.cumulativeLayoutShift} | FID: ${p.firstInputDelay}ms`,
-    )
+    lines.push(`- CLS: ${p.cumulativeLayoutShift} | FID: ${p.firstInputDelay}ms`)
     if (p.memoryUsed && p.memoryLimit) {
       lines.push(`- Memory: ${formatBytes(p.memoryUsed)} / ${formatBytes(p.memoryLimit)}`)
     }
@@ -337,8 +391,8 @@ export function generateTextContent(input: FormatInput): string {
     lines.push("")
     lines.push("## Interactions")
     lines.push("")
-    const allEvents = input.interactions.events
-    lines.push(`${input.interactions.summary.total} events`)
+    const allEvents = [...input.interactions.events].reverse()
+    lines.push(`${input.interactions.summary.total} events (most recent first)`)
     lines.push("")
     for (const event of allEvents) {
       lines.push(`- [${event.type}] ${formatInteraction(event)}`)
@@ -361,13 +415,22 @@ export function generateTextContent(input: FormatInput): string {
 
   // DOM (always last)
   if (captured.has("dom") && input.dom) {
+    const domSizeBytes = input.dom.length
+    const domSizeStr = formatBytes(domSizeBytes)
+    const isTruncated = input.dom.includes("<!-- truncated by PageNab -->")
+    const sizeLabel = isTruncated ? `${domSizeStr}, truncated` : domSizeStr
     lines.push("")
-    lines.push("## DOM")
+    lines.push(`## DOM (${sizeLabel})`)
     lines.push("")
     lines.push("```html")
     lines.push(input.dom)
     lines.push("```")
   }
+
+  // Footer
+  lines.push("")
+  lines.push("---")
+  lines.push(`Captured by PageNab v${m.captureVersion}`)
 
   return lines.join("\n")
 }
