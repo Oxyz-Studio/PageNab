@@ -43,7 +43,7 @@ export function Header({
   rightContent,
 }: HeaderProps) {
   return (
-    <div className="flex items-center justify-between border-b border-[var(--border-primary)] px-4 py-3">
+    <div className="flex items-center justify-between border-b border-[var(--border-primary)] px-4 py-1.5">
       {/* Left side */}
       <div className="flex items-center gap-2.5">
         {showBack && (
@@ -60,7 +60,7 @@ export function Header({
           <img
             src={logoUrl}
             alt="PageNab"
-            className="h-5 select-none"
+            className="h-8 select-none"
             draggable={false}
           />
         )}

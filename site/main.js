@@ -1,6 +1,6 @@
 /**
- * PageNab — Award-Winning Site Animations
- * GSAP + ScrollTrigger · Cursor orb · Magnetic buttons · Count-up
+ * PageNab — Site Animations & Interactive Presets
+ * GSAP + ScrollTrigger · Cursor orb · Magnetic buttons · Count-up · Preset tabs
  * NOTE: This file is dynamically injected after window.load, so DOM + GSAP are ready.
  */
 
@@ -42,7 +42,6 @@
       } else if (node.nodeName === 'BR') {
         html += '<br>';
       } else if (node.nodeType === Node.ELEMENT_NODE) {
-        // Preserve inner elements (em, strong, etc.) while splitting text inside
         html += node.textContent.split('').map(ch =>
           `<span class="char" aria-hidden="true" style="display:inline-block;will-change:transform,opacity">${
             ch === ' ' ? '&nbsp;' : ch
@@ -71,7 +70,6 @@
 
   const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
 
-  // "Page" — char-by-char stagger rise
   if (line1) {
     const chars1 = splitChars(line1);
     tl.from(chars1, {
@@ -83,7 +81,6 @@
     });
   }
 
-  // "Nab" — slides in from right, snaps from extra counter-clockwise to final -8deg
   if (nabBlock) {
     tl.from(nabBlock, {
       x: 100,
@@ -95,7 +92,6 @@
     }, '-=0.5');
   }
 
-  // Arrow — pops in with a spring, then floats continuously
   if (nabArrow) {
     gsap.set(nabArrow, { opacity: 0, scale: 0, rotate: -90, transformOrigin: '50% 50%' });
 
@@ -108,7 +104,6 @@
       transformOrigin: '50% 50%',
     }, '-=0.15');
 
-    // After intro — continuous float + subtle rotate pulse
     tl.add(() => {
       gsap.to(nabArrow, {
         y: -9,
@@ -127,13 +122,21 @@
     });
   }
 
-  // Rest of hero elements
   tl.to('.hero-eyebrow',  { opacity: 1, y: 0, duration: 0.6 }, '-=1.0')
     .to('.hero-subtitle', { opacity: 1, y: 0, duration: 0.6 }, '-=0.4')
     .to('.hero-actions',  { opacity: 1, y: 0, duration: 0.5 }, '-=0.35')
     .to('.hero-trust',    { opacity: 1, y: 0, duration: 0.5 }, '-=0.3')
     .to('.hero-card',     { opacity: 1, y: 0, duration: 0.8, ease: 'power2.out' }, '-=0.5')
     .to('.hero-scroll',   { opacity: 1, duration: 0.5 }, '-=0.2');
+
+  /* ── Preset tabs animation (staggered after card appears) ─ */
+  tl.from('.preset-tab', {
+    opacity: 0,
+    y: -8,
+    stagger: 0.08,
+    duration: 0.35,
+    ease: 'power2.out',
+  }, '-=0.3');
 
   /* ── NAV LOGO HOVER ─────────────────────────────────────── */
   const navLogo = document.querySelector('.nav-logo');
@@ -163,7 +166,7 @@
   });
 
   /* ── GENERIC REVEAL ─────────────────────────────────────── */
-  gsap.utils.toArray('.reveal').forEach((el, i) => {
+  gsap.utils.toArray('.reveal').forEach(el => {
     gsap.to(el, {
       opacity: 1,
       y: 0,
@@ -223,31 +226,43 @@
     });
   });
 
-  /* ── HOW IT WORKS — STEPS LINE ──────────────────────────── */
-  const stepsLine = document.querySelector('.steps-line');
-  if (stepsLine) {
-    gsap.to(stepsLine, {
-      scaleX: 1,
-      duration: 1.2,
-      ease: 'none',
-      scrollTrigger: {
-        trigger: '.steps-track',
-        start: 'top 65%',
-        end: 'top 30%',
-        scrub: 0.8,
-      },
-    });
-  }
+  /* ── HOW STRIP ANIMATION ─────────────────────────────────── */
+  gsap.from('.how-step', {
+    opacity: 0,
+    y: 30,
+    stagger: 0.15,
+    duration: 0.65,
+    ease: 'power2.out',
+    scrollTrigger: {
+      trigger: '.how-strip',
+      start: 'top 80%',
+    },
+  });
 
-  /* ── BENTO HOVER RADIAL GLOW ────────────────────────────── */
-  document.querySelectorAll('.bento-item').forEach(card => {
-    card.addEventListener('mousemove', (e) => {
-      const rect = card.getBoundingClientRect();
-      const x = ((e.clientX - rect.left) / rect.width) * 100;
-      const y = ((e.clientY - rect.top) / rect.height) * 100;
-      card.style.setProperty('--mouse-x', `${x}%`);
-      card.style.setProperty('--mouse-y', `${y}%`);
-    });
+  gsap.from('.how-arrow', {
+    opacity: 0,
+    x: -15,
+    stagger: 0.15,
+    duration: 0.5,
+    ease: 'power2.out',
+    scrollTrigger: {
+      trigger: '.how-strip',
+      start: 'top 80%',
+    },
+  });
+
+  /* ── STAT CARDS ─────────────────────────────────────────── */
+  gsap.from('.stat-card', {
+    opacity: 0,
+    y: 30,
+    scale: 0.95,
+    stagger: 0.1,
+    duration: 0.6,
+    ease: 'back.out(1.5)',
+    scrollTrigger: {
+      trigger: '.privacy-stats',
+      start: 'top 82%',
+    },
   });
 
   /* ── MAGNETIC BUTTONS ───────────────────────────────────── */
@@ -313,7 +328,6 @@
     question.addEventListener('click', () => {
       const isOpen = item.classList.contains('open');
 
-      // Close all
       document.querySelectorAll('.faq-item.open').forEach(openItem => {
         if (openItem !== item) {
           openItem.classList.remove('open');
@@ -343,91 +357,7 @@
     });
   });
 
-  /* ── PROBLEM CARDS STAGGER ──────────────────────────────── */
-  const problemCards = document.querySelectorAll('.problem-card');
-  problemCards.forEach((card, i) => {
-    const fromLeft = i % 2 === 0;
-    gsap.from(card, {
-      x: fromLeft ? -60 : 60,
-      opacity: 0,
-      duration: 0.75,
-      ease: 'power3.out',
-      scrollTrigger: {
-        trigger: card,
-        start: 'top 85%',
-      },
-      delay: i * 0.08,
-    });
-  });
-
-  /* ── BENTO ITEMS STAGGER ────────────────────────────────── */
-  gsap.from('.bento-item', {
-    opacity: 0,
-    y: 40,
-    scale: 0.95,
-    stagger: 0.08,
-    duration: 0.65,
-    ease: 'power2.out',
-    scrollTrigger: {
-      trigger: '.bento',
-      start: 'top 80%',
-    },
-  });
-
-  /* ── PRESET CARDS ───────────────────────────────────────── */
-  gsap.from('.preset-card', {
-    opacity: 0,
-    y: 36,
-    stagger: 0.12,
-    duration: 0.65,
-    ease: 'power2.out',
-    scrollTrigger: {
-      trigger: '.presets-grid',
-      start: 'top 82%',
-    },
-  });
-
-  /* ── STAT CARDS ─────────────────────────────────────────── */
-  gsap.from('.stat-card', {
-    opacity: 0,
-    y: 30,
-    scale: 0.95,
-    stagger: 0.1,
-    duration: 0.6,
-    ease: 'back.out(1.5)',
-    scrollTrigger: {
-      trigger: '.privacy-stats',
-      start: 'top 82%',
-    },
-  });
-
-  /* ── MODE CARDS ─────────────────────────────────────────── */
-  gsap.from('.mode-card', {
-    opacity: 0,
-    y: 36,
-    stagger: 0.12,
-    duration: 0.7,
-    ease: 'power2.out',
-    scrollTrigger: {
-      trigger: '.modes-grid',
-      start: 'top 82%',
-    },
-  });
-
-  /* ── STEP CARDS ─────────────────────────────────────────── */
-  gsap.from('.step', {
-    opacity: 0,
-    y: 40,
-    stagger: 0.15,
-    duration: 0.7,
-    ease: 'power3.out',
-    scrollTrigger: {
-      trigger: '.steps-track',
-      start: 'top 80%',
-    },
-  });
-
-  /* ── FAQ ITEMS ──────────────────────────────────────────── */
+  /* ── FAQ ITEMS REVEAL ──────────────────────────────────── */
   gsap.from('.faq-item', {
     opacity: 0,
     y: 20,
@@ -440,22 +370,197 @@
     },
   });
 
-  /* ── CTA HEADING ────────────────────────────────────────── */
-  const ctaHeading = document.querySelector('.cta-heading');
-  if (ctaHeading) {
-    const chars = splitChars(ctaHeading);
-    gsap.from(chars, {
-      y: 50,
+  /* ══════════════════════════════════════════════════════════
+     INTERACTIVE PRESET TABS
+  ═══════════════════════════════════════════════════════ */
+
+  const presetOutput = document.getElementById('preset-output');
+  const presetTokens = document.getElementById('preset-tokens');
+  const customToggles = document.getElementById('custom-toggles');
+  const presetTabs = document.querySelectorAll('.preset-tab');
+
+  if (!presetOutput || !presetTokens || !customToggles) {
+    console.log('[PageNab] Animations initialised (no preset card) ✓');
+    return;
+  }
+
+  /* ── PRESET CONTENT TEMPLATES ───────────────────────────── */
+  const metadataBlock = `<span class="code-h"># Web page capture</span>
+
+<span class="code-k">**URL:**</span> https://app.example.com/dashboard
+<span class="code-k">**Title:**</span> Dashboard — MyApp
+<span class="code-k">**Time:**</span> 2026-03-01 14:23:45
+<span class="code-k">**Viewport:**</span> 1920×1080`;
+
+  const consoleBlock = `
+
+<span class="code-h">## Console</span>
+2 errors, 1 warning
+- <span class="code-e">**ERROR**</span> TypeError: Cannot read property 'map' of undefined — Dashboard.tsx:47
+- <span class="code-e">**ERROR**</span> GET /api/users 500 (Internal Server Error)`;
+
+  const networkBlock = `
+
+<span class="code-h">## Network</span>
+42 requests, 2 failed
+- <span class="code-f">**FAIL**</span> <span class="code-p">\`/api/users\`</span> → 500 Internal Server Error
+- <span class="code-f">**FAIL**</span> <span class="code-p">\`/api/stats\`</span> → 403 Forbidden`;
+
+  const cookiesBlock = `
+
+<span class="code-h">## Cookies</span>
+8 cookies (sensitive values masked)
+- <span class="code-p">\`_ga\`</span> = GA1.1.123456
+- <span class="code-p">\`session_id\`</span> = <span class="code-w">***</span>
+- <span class="code-p">\`auth_token\`</span> = <span class="code-w">***</span>`;
+
+  const storageBlock = `
+
+<span class="code-h">## Storage</span>
+localStorage: 4 keys · sessionStorage: 2 keys
+- <span class="code-p">\`theme\`</span> = "dark"
+- <span class="code-p">\`api_token\`</span> = <span class="code-w">***</span>
+- <span class="code-p">\`user_prefs\`</span> = {"lang":"en"}`;
+
+  const perfBlock = `
+
+<span class="code-h">## Performance</span>
+- <span class="code-k">LCP:</span> 1.8s · <span class="code-k">CLS:</span> 0.04 · <span class="code-k">FID:</span> 12ms
+- <span class="code-k">Load:</span> 2.1s · <span class="code-k">DOMContentLoaded:</span> 0.9s
+- <span class="code-k">Memory:</span> 42MB used`;
+
+  const interactionsBlock = `
+
+<span class="code-h">## Interactions</span>
+Last 5 events
+- <span class="code-p">click</span> button.submit-btn (14:23:41)
+- <span class="code-p">input</span> input#search → <span class="code-w">***</span> (14:23:38)
+- <span class="code-p">scroll</span> window ↓340px (14:23:35)`;
+
+  const domBlock = `
+
+<span class="code-h">## DOM</span>
+<span class="code-c">&lt;!-- 2,847 chars, scripts removed --&gt;</span>
+<span class="code-p">&lt;main class="dashboard"&gt;</span>
+  <span class="code-p">&lt;h1&gt;</span>Dashboard<span class="code-p">&lt;/h1&gt;</span>
+  <span class="code-p">&lt;div class="error-panel"&gt;</span>…<span class="code-p">&lt;/div&gt;</span>
+<span class="code-p">&lt;/main&gt;</span>`;
+
+  const screenshotBlock = `
+
+<span class="code-h">## Screenshot</span>
+<span class="code-p">\`~/Downloads/PageNab_…png\`</span>
+<span class="code-g">✓ Copied to clipboard</span>`;
+
+  /* ── PRESET GENERATORS ─────────────────────────────────── */
+  function getLightContent() {
+    return metadataBlock + consoleBlock + networkBlock + screenshotBlock;
+  }
+
+  function getFullContent() {
+    return metadataBlock + consoleBlock + networkBlock + cookiesBlock + storageBlock + perfBlock + interactionsBlock + domBlock + screenshotBlock;
+  }
+
+  function getCustomContent() {
+    const toggles = customToggles.querySelectorAll('.toggle-item');
+    let content = metadataBlock;
+    toggles.forEach(t => {
+      if (!t.classList.contains('active')) return;
+      switch (t.dataset.toggle) {
+        case 'console': content += consoleBlock; break;
+        case 'network': content += networkBlock; break;
+        case 'cookies': content += cookiesBlock; break;
+        case 'storage': content += storageBlock; break;
+        case 'performance': content += perfBlock; break;
+        case 'interactions': content += interactionsBlock; break;
+        case 'dom': content += domBlock; break;
+      }
+    });
+    content += screenshotBlock;
+    return content;
+  }
+
+  function estimateCustomTokens() {
+    const active = customToggles.querySelectorAll('.toggle-item.active').length;
+    if (active === 0) return '~100–200 tokens + screenshot';
+    if (active <= 2) return '~200–500 tokens + screenshot';
+    if (active <= 4) return '~500–2K tokens + screenshot';
+    return '~2K–150K tokens + screenshot';
+  }
+
+  /* ── SWITCH PRESET ─────────────────────────────────────── */
+  function switchPreset(preset) {
+    // Fade out
+    gsap.to(presetOutput, {
       opacity: 0,
-      stagger: 0.02,
-      duration: 0.7,
-      ease: 'power3.out',
-      scrollTrigger: {
-        trigger: ctaHeading,
-        start: 'top 80%',
+      duration: 0.15,
+      ease: 'power2.in',
+      onComplete: () => {
+        // Update content
+        switch (preset) {
+          case 'light':
+            presetOutput.innerHTML = getLightContent();
+            presetTokens.textContent = '~200–500 tokens + screenshot';
+            customToggles.hidden = true;
+            break;
+          case 'full':
+            presetOutput.innerHTML = getFullContent();
+            presetTokens.textContent = '~1.5K–150K tokens + screenshot';
+            customToggles.hidden = true;
+            break;
+          case 'custom':
+            presetOutput.innerHTML = getCustomContent();
+            presetTokens.textContent = estimateCustomTokens();
+            customToggles.hidden = false;
+            break;
+        }
+
+        // Fade in
+        gsap.to(presetOutput, {
+          opacity: 1,
+          duration: 0.2,
+          ease: 'power2.out',
+        });
       },
     });
+
+    // Update tab active state
+    presetTabs.forEach(tab => {
+      const isActive = tab.dataset.preset === preset;
+      tab.classList.toggle('active', isActive);
+      tab.setAttribute('aria-selected', isActive);
+    });
   }
+
+  /* ── TAB CLICK HANDLERS ────────────────────────────────── */
+  presetTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      switchPreset(tab.dataset.preset);
+    });
+  });
+
+  /* ── CUSTOM TOGGLE HANDLERS ────────────────────────────── */
+  customToggles.querySelectorAll('.toggle-item').forEach(toggle => {
+    toggle.addEventListener('click', () => {
+      toggle.classList.toggle('active');
+
+      // Update output in-place
+      gsap.to(presetOutput, {
+        opacity: 0,
+        duration: 0.12,
+        ease: 'power2.in',
+        onComplete: () => {
+          presetOutput.innerHTML = getCustomContent();
+          presetTokens.textContent = estimateCustomTokens();
+          gsap.to(presetOutput, {
+            opacity: 1,
+            duration: 0.18,
+            ease: 'power2.out',
+          });
+        },
+      });
+    });
+  });
 
   console.log('[PageNab] Animations initialised ✓');
 })();
