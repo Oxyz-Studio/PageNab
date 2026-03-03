@@ -497,7 +497,8 @@ function ensureNetworkPatcher(): void {
     return origFetch.apply(this, [input, init]).then(
       (resp: Response) => {
         const entry: Entry = { url, method, status: resp.status, statusText: resp.statusText, duration: Date.now() - start, requestBodyPreview: reqBody, timestamp: new Date(start).toISOString(), responseContentType: resp.headers.get("content-type") ?? undefined }
-        if (resp.status >= 400) { resp.clone().text().then((t) => { entry.responseBodyPreview = preview(t) }).catch(() => {}) }
+        const isMutation = ["POST", "PUT", "PATCH", "DELETE"].includes(method)
+        if (resp.status >= 400 || isMutation) { resp.clone().text().then((t) => { entry.responseBodyPreview = preview(t) }).catch(() => {}) }
         push(entry)
         return resp
       },
@@ -530,7 +531,8 @@ function ensureNetworkPatcher(): void {
         responseContentType: xhr.getResponseHeader("content-type") ?? undefined,
         timestamp: new Date((xhr.__pn_start as number) ?? Date.now()).toISOString(),
       }
-      if (xhr.status >= 400) { entry.responseBodyPreview = preview(xhr.responseText) }
+      const isMutation = ["POST", "PUT", "PATCH", "DELETE"].includes((xhr.__pn_method as string) ?? "GET")
+      if (xhr.status >= 400 || isMutation) { entry.responseBodyPreview = preview(xhr.responseText) }
       push(entry)
     })
     return origSend.apply(this, [body])

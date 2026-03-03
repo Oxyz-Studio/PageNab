@@ -191,12 +191,15 @@ Everything captured. For complex bugs where you need maximum context.
 - GET `/` → 200 (180ms, 14.2 KB, document)
 - GET `/static/js/main.abc123.js` → 200 (95ms, 245.0 KB, script)
 - GET `/static/css/app.def456.css` → 200 (42ms, 18.3 KB, stylesheet)
-- **FAIL** GET `/api/users` → 500 (220ms, 128 B, fetch)
+- **FAIL** GET `/api/users` → 500 Internal Server Error (220ms, 128 B, fetch)
   Response: {"error":"Internal Server Error"}
-- **FAIL** GET `/api/stats` → 403 (45ms, 64 B, fetch)
+- **FAIL** GET `/api/stats` → 403 Forbidden (45ms, 64 B, fetch)
 - **SLOW** GET `/api/analytics` → 200 (4200ms, 1.2 MB, fetch)
+- POST `/api/events` → 201 (150ms, 64 B, fetch)
+  Request: {"action":"page_view","page":"/dashboard"}
+  Response: {"id":42,"status":"created"}
 - GET `/api/config` → 200 (85ms, 2.1 KB, fetch)
-- ... and 35 more
+- ... and 34 more
 
 ## Cookies
 

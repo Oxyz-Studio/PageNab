@@ -126,10 +126,11 @@ Requetes reseau problematiques. Light = failed only. Full/Custom = failed + slow
 
 ```json
 {
-  "summary": { "total": 45, "failed": 2, "slow": 1 },
+  "summary": { "total": 45, "failed": 2, "slow": 1, "opaque": 3 },
   "failed": [
     {
       "url": "https://api.example.com/users",
+      "method": "POST",
       "status": 500,
       "statusText": "Internal Server Error",
       "type": "fetch",
@@ -137,19 +138,25 @@ Requetes reseau problematiques. Light = failed only. Full/Custom = failed + slow
       "timestamp": "2026-03-01T14:23:42.000Z",
       "requestHeaders": {},
       "responseHeaders": { "content-type": "application/json" },
-      "responseBody": "{\"error\":\"Internal server error\"}",
+      "requestBodyPreview": "{\"name\":\"test\"}",
+      "responseBodyPreview": "{\"error\":\"Internal server error\"}",
       "initiator": "Dashboard.tsx:23"
     }
   ],
-  "slow": [ /* ... */ ]
+  "slow": [ /* ... */ ],
+  "all": [ /* all requests (Full mode only) */ ]
 }
 ```
 
 **Regles** :
 - "failed" = status >= 400 ou erreur reseau. Max 50.
 - "slow" = duration > 3000ms. Max 10.
+- "all" = toutes les requetes (Full mode uniquement). Max 50 affichees dans le text/plain.
 - Headers sensibles retires (Authorization, Cookie, Set-Cookie, X-API-Key, X-Auth-Token, headers contenant "token"/"key"/"secret"/"password")
 - Body de reponse tronque a 10KB
+- **Methode par defaut** : les resource loads (CSS, JS, images, fonts) ne passent pas par fetch/XHR intercepte — la methode est `"GET"` par defaut
+- **Cross-origin opaque** : les reponses opaques (status=0, cross-origin sans CORS) sont comptees dans `total` mais exclues du detail. Le champ `opaque` dans le summary indique combien
+- **Body preview** : le `responseBodyPreview` est capture pour les requetes echouees (status >= 400) ET les mutations API (POST/PUT/PATCH/DELETE) meme reussies. Le `requestBodyPreview` est capture pour les mutations.
 
 ### dom
 
@@ -341,71 +348,124 @@ En mode area/element, le full page screenshot est sauvegarde dans Downloads et s
 
 ### Exemple text/plain — Preset Light
 
-```
-[PageNab] https://app.example.com/dashboard?tab=overview
-Captured: 2026-03-01 14:23:45 | Viewport: 1920x1080 | Lang: fr-FR | Preset: Light
+```markdown
+# Web page capture
 
-Console: 3 errors, 1 warning
-  [ERROR] TypeError: Cannot read property 'map' of undefined
-          Dashboard.tsx:47:12
-          Stack: at Dashboard (Dashboard.tsx:47:12)
-                 at renderWithHooks (react-dom.production.min.js:83:1)
-  [ERROR] ReferenceError: data is not defined
-          utils.ts:12
-  [ERROR] 404: /api/users/avatar/123.png
-  [WARN]  Each child in a list should have a unique "key" prop.
+**URL:** https://app.example.com/dashboard?tab=overview
+**Title:** Dashboard - My App
+**Time:** 2026-03-01 14:23:45
+**Viewport:** 1920x1080
+**Language:** fr-FR
+**Browser:** Chrome 134 (macOS)
+**Color scheme:** light
+**Capture mode:** fullpage | Preset: light
+**Includes:** screenshot, console (errors only), network (failed only)
+**Excludes:** dom, cookies, storage, performance, interactions
 
-Network: 2 failed
-  [FAIL] /api/users → 500 Internal Server Error (fetch)
-         Response: {"error":"Internal server error"}
-  [FAIL] /api/stats → 403 Forbidden (fetch)
+## Console
 
-Screenshot: ~/Downloads/pagenab-app.example.com-2026-03-01_14-23-45.png
+16 entries, 3 errors, 1 warning
+
+- **ERROR** (14:23:42) TypeError: Cannot read property 'map' of undefined — `Dashboard.tsx:47`
+  at Dashboard (Dashboard.tsx:47:12)
+  at renderWithHooks (react-dom.production.min.js:83:1)
+- **ERROR** (14:23:43) ReferenceError: data is not defined — `utils.ts:12`
+- **ERROR** (14:23:44) 404: /api/users/avatar/123.png
+
+## Network
+
+45 requests, 2 failed
+
+- **FAIL** GET `/api/users` → 500 Internal Server Error (fetch, 234ms)
+  Response: {"error":"Internal server error"}
+- **FAIL** GET `/api/stats` → 403 Forbidden (fetch, 45ms)
+
+## Screenshots
+
+`~/Downloads/pagenab-app.example.com-2026-03-01_14-23-45.png`
+
+---
+Captured by PageNab v1.0.0
 ```
 
 ### Exemple text/plain — Preset Full
 
-```
-[PageNab] https://app.example.com/dashboard?tab=overview
-Captured: 2026-03-01 14:23:45 | Viewport: 1920x1080 | Lang: fr-FR | Preset: Full
+```markdown
+# Web page capture
 
-Console: 3 errors, 1 warning, 12 logs
-  [ERROR] TypeError: Cannot read property 'map' of undefined
-          Dashboard.tsx:47:12
-          Stack: at Dashboard (Dashboard.tsx:47:12)
-                 at renderWithHooks (react-dom.production.min.js:83:1)
-  [ERROR] ReferenceError: data is not defined
-          utils.ts:12
-  [ERROR] 404: /api/users/avatar/123.png
-  [WARN]  Each child in a list should have a unique "key" prop.
+**URL:** https://app.example.com/dashboard?tab=overview
+**Title:** Dashboard - My App
+**Time:** 2026-03-01 14:23:45
+**Viewport:** 1920x1080
+**Language:** fr-FR
+**Browser:** Chrome 134 (macOS)
+**Color scheme:** light
+**Capture mode:** fullpage | Preset: full
+**Includes:** screenshot, console, network, dom, cookies, storage, performance, interactions
 
-Network: 45 total, 2 failed, 1 slow
-  [FAIL] /api/users → 500 Internal Server Error (fetch)
-         Response: {"error":"Internal server error"}
-  [FAIL] /api/stats → 403 Forbidden (fetch)
-  [SLOW] /api/analytics → 200 (5200ms) (fetch)
+## Console
 
-Cookies: 12 cookies
-  session_id: *** | theme: dark | lang: fr | _ga: GA1.2***
+3 errors, 1 warning, 12 logs
 
-Storage: 5 localStorage keys, 3 sessionStorage keys
-  [local] user_preferences: {"theme":"dark","lang":"fr"...}
-  [local] auth_token: ***
-  [session] form_draft: {"title":"My post",...}
+- **ERROR** (14:23:42) TypeError: Cannot read property 'map' of undefined — `Dashboard.tsx:47`
+  at Dashboard (Dashboard.tsx:47:12)
+  at renderWithHooks (react-dom.production.min.js:83:1)
+- **ERROR** (14:23:43) ReferenceError: data is not defined — `utils.ts:12`
+- **ERROR** (14:23:44) 404: /api/users/avatar/123.png
+- **WARN** (14:23:40) Each child in a list should have a unique "key" prop.
 
-Performance:
-  Load: 2100ms | DOMContentLoaded: 1200ms
-  LCP: 1200ms | CLS: 0.05 | FID: 45ms
-  Memory: 45 MB / 4096 MB
+## Network
 
-Interactions: 12 events (showing last 5)
-  [click] button.submit-btn "Submit" (14:29:58)
-  [scroll] down 450px (14:29:55)
-  [input] input#search *** (14:29:50)
+45 requests, 2 failed, 1 slow, 3 cross-origin excluded
 
-Screenshot: ~/Downloads/pagenab-app.example.com-2026-03-01_14-23-45.png
+- GET `/` → 200 (180ms, 14.2 KB, document)
+- GET `/static/js/main.abc123.js` → 200 (95ms, 245.0 KB, script)
+- GET `/static/css/app.def456.css` → 200 (42ms, 18.3 KB, stylesheet)
+- **FAIL** POST `/api/users` → 500 Internal Server Error (234ms, 128 B, fetch)
+  Request: {"name":"test"}
+  Response: {"error":"Internal server error"}
+- **FAIL** GET `/api/stats` → 403 Forbidden (45ms, 64 B, fetch)
+- **SLOW** GET `/api/analytics` → 200 (5200ms, 1.2 MB, fetch)
+- POST `/api/events` → 201 (150ms, 64 B, fetch)
+  Request: {"action":"page_view","page":"/dashboard"}
+  Response: {"id":42,"status":"created"}
+- GET `/api/config` → 200 (85ms, 2.1 KB, fetch)
+- ... and 37 more
 
---- DOM Snapshot ---
+## Cookies
+
+session_id=*** | theme=dark | lang=fr | _ga=GA1.2***
+
+## Storage
+
+5 localStorage, 3 sessionStorage
+
+- [local] user_preferences: `{"theme":"dark","lang":"fr"...}`
+- [local] auth_token: `***`
+- [session] form_draft: `{"title":"My post",...}`
+
+## Performance
+
+- FP: 800ms | FCP: 950ms | LCP: 1200ms
+- Load: 2100ms | DOMContentLoaded: 1200ms
+- CLS: 0.05 | FID: 45ms
+- Memory: 45.0 MB / 4.0 GB
+
+## Interactions
+
+12 events (most recent first)
+
+- [click] button.submit-btn "Submit" (14:29:58)
+- [scroll] down 450px (14:29:55)
+- [input] input#search *** (14:29:50)
+
+## Screenshots
+
+`~/Downloads/pagenab-app.example.com-2026-03-01_14-23-45.png`
+
+## DOM (48.3 KB)
+
+```html
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -420,10 +480,14 @@ Screenshot: ~/Downloads/pagenab-app.example.com-2026-03-01_14-23-45.png
 </html>
 ```
 
+---
+Captured by PageNab v1.0.0
+```
+
 ### Regles de formatage essentielles
 
-1. **Max 5 erreurs console** et **max 5 requetes failed** affichees
-2. **Max 3 warnings** et **max 3 requetes slow** affichees
+1. **Max 5 erreurs console** affichees, **max 3 warnings**
+2. **Light** : max 5 requetes failed, max 3 slow. **Full** : max 50 requetes (toutes) avec body preview sur les echecs et mutations
 3. **DOM toujours en dernier**, apres un separateur `--- DOM Snapshot ---`
 4. **Sections absentes** : si une donnee n'a pas ete capturee, la section n'apparait pas (pas de "N/A")
 5. **Pas de jugement** : jamais "bug found", "issue detected", etc.

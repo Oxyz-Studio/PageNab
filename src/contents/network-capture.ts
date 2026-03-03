@@ -86,8 +86,9 @@ if (!win.__pagenab_network_buffer) {
           timestamp: new Date(start).toISOString(),
         }
 
-        // Capture response body preview for failed requests
-        if (response.status >= 400) {
+        // Capture response body preview for failed requests and API mutations
+        const isApiMutation = ["POST", "PUT", "PATCH", "DELETE"].includes(method)
+        if (response.status >= 400 || isApiMutation) {
           response
             .clone()
             .text()
@@ -143,8 +144,9 @@ if (!win.__pagenab_network_buffer) {
         timestamp: new Date((xhr.__pagenab_start as number) ?? Date.now()).toISOString(),
       }
 
-      // Capture response body preview for failed requests
-      if (xhr.status >= 400) {
+      // Capture response body preview for failed requests and API mutations
+      const isApiMutation = ["POST", "PUT", "PATCH", "DELETE"].includes((xhr.__pagenab_method as string) ?? "GET")
+      if (xhr.status >= 400 || isApiMutation) {
         entry.responseBodyPreview = safePreview(xhr.responseText)
       }
 

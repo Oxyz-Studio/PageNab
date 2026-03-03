@@ -282,6 +282,7 @@ export function generateTextContent(input: FormatInput): string {
       const parts: string[] = [`${s.total} requests`]
       if (s.failed > 0) parts.push(`${s.failed} failed`)
       if (s.slow > 0) parts.push(`${s.slow} slow`)
+      if (s.opaque && s.opaque > 0) parts.push(`${s.opaque} cross-origin excluded`)
       lines.push(parts.join(", "))
       lines.push("")
 
@@ -293,8 +294,10 @@ export function generateTextContent(input: FormatInput): string {
         const prefix = isFailed ? "**FAIL** " : isSlow ? "**SLOW** " : ""
         const methodStr = method ? `${method} ` : ""
         const sizeStr = req.size && req.size > 0 ? `, ${formatBytes(req.size)}` : ""
-        lines.push(`- ${prefix}${methodStr}\`${path}\` → ${req.status} (${req.duration}ms${sizeStr}, ${req.type})`)
-        if (isFailed) {
+        const statusTextStr = isFailed && req.statusText && !req.statusText.startsWith("HTTP ") ? ` ${req.statusText}` : ""
+        lines.push(`- ${prefix}${methodStr}\`${path}\` → ${req.status}${statusTextStr} (${req.duration}ms${sizeStr}, ${req.type})`)
+        const isMutation = ["POST", "PUT", "PATCH", "DELETE"].includes(req.method ?? "")
+        if (isFailed || isMutation) {
           if (req.requestBodyPreview) lines.push(`  Request: ${truncate(req.requestBodyPreview, 200)}`)
           if (req.responseBodyPreview) lines.push(`  Response: ${truncate(req.responseBodyPreview, 200)}`)
         }

@@ -33,7 +33,7 @@ export interface CollectorResult {
     }>
   }
   network?: {
-    summary: { total: number; failed: number; slow: number }
+    summary: { total: number; failed: number; slow: number; opaque?: number }
     failed: Array<{
       url: string
       method?: string
@@ -229,6 +229,7 @@ export function collectPageData(options: CollectorOptions): CollectorResult {
     const slow: NetEntry[] = []
     const all: NetEntry[] = []
     let total = 0
+    let opaque = 0
 
     for (const entry of entries) {
       // Skip entries with empty or opaque URLs (cross-origin sub-resources like CSS background-images)
@@ -245,6 +246,7 @@ export function collectPageData(options: CollectorOptions): CollectorResult {
       if (status === 0 && options.networkFilter === "all") {
         // Only include in `all` if we have meaningful data
         // status 0 means opaque/cross-origin — skip from detailed list
+        opaque++
         continue
       }
 
@@ -260,7 +262,7 @@ export function collectPageData(options: CollectorOptions): CollectorResult {
 
       const netEntry: NetEntry = {
         url: entry.name,
-        method: bufferEntry?.method,
+        method: bufferEntry?.method ?? "GET",
         status,
         statusText: bufferEntry?.statusText ?? `HTTP ${status}`,
         type: entry.initiatorType,
@@ -288,7 +290,7 @@ export function collectPageData(options: CollectorOptions): CollectorResult {
     }
 
     result.network = {
-      summary: { total, failed: failed.length, slow: slow.length },
+      summary: { total, failed: failed.length, slow: slow.length, ...(opaque > 0 ? { opaque } : {}) },
       failed,
       slow,
       ...(all.length > 0 ? { all } : {}),

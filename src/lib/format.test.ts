@@ -438,7 +438,7 @@ describe("generateTextContent", () => {
     expect(text).toContain("3200ms")
   })
 
-  it("shows all network requests in full mode with methods", () => {
+  it("shows all network requests in full mode with methods and statusText on failures", () => {
     const input = makeBaseInput({
       metadata: {
         ...makeBaseInput().metadata,
@@ -487,6 +487,7 @@ describe("generateTextContent", () => {
           },
           {
             url: "https://cdn.example.com/app.js",
+            method: "GET",
             status: 200,
             statusText: "OK",
             type: "script",
@@ -509,6 +510,7 @@ describe("generateTextContent", () => {
           },
           {
             url: "https://cdn.example.com/style.css",
+            method: "GET",
             status: 200,
             statusText: "OK",
             type: "link",
@@ -523,12 +525,143 @@ describe("generateTextContent", () => {
     })
     const text = generateTextContent(input)
     expect(text).toContain("4 requests, 1 failed, 1 slow")
-    expect(text).toContain("**FAIL** POST `/users` → 500")
-    expect(text).toContain("`/app.js` → 200 (45ms, 122.5 KB, script)")
+    // Failed request shows statusText
+    expect(text).toContain("**FAIL** POST `/users` → 500 Internal Server Error")
+    expect(text).toContain("GET `/app.js` → 200 (45ms, 122.5 KB, script)")
     expect(text).toContain("**SLOW** GET `/heavy` → 200 (3200ms, xhr)")
-    expect(text).toContain("`/style.css` → 200 (30ms, 2.0 KB, link)")
+    expect(text).toContain("GET `/style.css` → 200 (30ms, 2.0 KB, link)")
     // Should NOT show "No failed requests."
     expect(text).not.toContain("No failed requests.")
+  })
+
+  it("does not show statusText when it is a fallback HTTP XXX", () => {
+    const input = makeBaseInput({
+      metadata: {
+        ...makeBaseInput().metadata,
+        preset: "full",
+        capturedData: ["network"],
+      },
+      network: {
+        summary: { total: 1, failed: 1, slow: 0 },
+        failed: [],
+        slow: [],
+        all: [
+          {
+            url: "https://cdn.example.com/logo.png",
+            method: "GET",
+            status: 404,
+            statusText: "HTTP 404",
+            type: "img",
+            duration: 76,
+            size: 275000,
+            timestamp: "2026-03-01T14:23:42.000Z",
+            requestHeaders: {},
+            responseHeaders: {},
+          },
+        ],
+      },
+    })
+    const text = generateTextContent(input)
+    // Should NOT duplicate status as "404 HTTP 404"
+    expect(text).toContain("→ 404 (76ms")
+    expect(text).not.toContain("HTTP 404")
+  })
+
+  it("shows opaque count in full mode summary", () => {
+    const input = makeBaseInput({
+      metadata: {
+        ...makeBaseInput().metadata,
+        preset: "full",
+        capturedData: ["network"],
+      },
+      network: {
+        summary: { total: 15, failed: 1, slow: 0, opaque: 3 },
+        failed: [],
+        slow: [],
+        all: [
+          {
+            url: "https://cdn.example.com/app.js",
+            method: "GET",
+            status: 200,
+            statusText: "OK",
+            type: "script",
+            duration: 45,
+            timestamp: "2026-03-01T14:23:42.000Z",
+            requestHeaders: {},
+            responseHeaders: {},
+          },
+        ],
+      },
+    })
+    const text = generateTextContent(input)
+    expect(text).toContain("15 requests, 1 failed, 3 cross-origin excluded")
+  })
+
+  it("shows body preview for successful POST in full mode", () => {
+    const input = makeBaseInput({
+      metadata: {
+        ...makeBaseInput().metadata,
+        preset: "full",
+        capturedData: ["network"],
+      },
+      network: {
+        summary: { total: 1, failed: 0, slow: 0 },
+        failed: [],
+        slow: [],
+        all: [
+          {
+            url: "https://api.example.com/users",
+            method: "POST",
+            status: 201,
+            statusText: "Created",
+            type: "fetch",
+            duration: 120,
+            timestamp: "2026-03-01T14:23:42.000Z",
+            requestHeaders: {},
+            responseHeaders: {},
+            requestBodyPreview: '{"name":"Alice"}',
+            responseBodyPreview: '{"id":42,"name":"Alice"}',
+          },
+        ],
+      },
+    })
+    const text = generateTextContent(input)
+    expect(text).toContain("POST `/users` → 201")
+    expect(text).toContain('Request: {"name":"Alice"}')
+    expect(text).toContain('Response: {"id":42,"name":"Alice"}')
+  })
+
+  it("does not show body preview for successful GET in full mode", () => {
+    const input = makeBaseInput({
+      metadata: {
+        ...makeBaseInput().metadata,
+        preset: "full",
+        capturedData: ["network"],
+      },
+      network: {
+        summary: { total: 1, failed: 0, slow: 0 },
+        failed: [],
+        slow: [],
+        all: [
+          {
+            url: "https://api.example.com/users",
+            method: "GET",
+            status: 200,
+            statusText: "OK",
+            type: "fetch",
+            duration: 50,
+            timestamp: "2026-03-01T14:23:42.000Z",
+            requestHeaders: {},
+            responseHeaders: {},
+            responseBodyPreview: '{"users":[]}',
+          },
+        ],
+      },
+    })
+    const text = generateTextContent(input)
+    expect(text).toContain("GET `/users` → 200")
+    // GET success should NOT show body preview
+    expect(text).not.toContain("Response:")
   })
 
   it("uses compact format for cookies when fewer than 10", () => {

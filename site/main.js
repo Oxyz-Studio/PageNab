@@ -517,8 +517,8 @@
 
 <span class="code-h">## Network</span>
 42 requests, 2 failed
-- <span class="code-f">**FAIL**</span> GET <span class="code-p">\`/api/users\`</span> → 500 Internal Server Error
-- <span class="code-f">**FAIL**</span> GET <span class="code-p">\`/api/stats\`</span> → 403 Forbidden
+- <span class="code-f">**FAIL**</span> GET <span class="code-p">\`/api/users\`</span> → 500 Internal Server Error (fetch, 220ms)
+- <span class="code-f">**FAIL**</span> GET <span class="code-p">\`/api/stats\`</span> → 403 Forbidden (fetch, 45ms)
 
 <span class="code-h">## Screenshot</span>
 <span class="code-p">\`~/Downloads/PageNab_dashboard_….png\`</span>
@@ -543,10 +543,14 @@
 - <span class="code-c">**DEBUG**</span> [Cache] Hit ratio: 0.82
 
 <span class="code-h">## Network</span>
-42 requests, 2 failed
-- <span class="code-f">**FAIL**</span> GET <span class="code-p">\`/api/users\`</span> → 500 Internal Server Error
+42 requests, 2 failed, 1 slow
+- GET <span class="code-p">\`/\`</span> → 200 (180ms, 14.2 KB, document)
+- GET <span class="code-p">\`/static/js/main.js\`</span> → 200 (95ms, 245 KB, script)
+- <span class="code-f">**FAIL**</span> GET <span class="code-p">\`/api/users\`</span> → 500 Internal Server Error (220ms, 128 B, fetch)
   Response: {"error":"Internal Server Error"}
-- <span class="code-f">**FAIL**</span> GET <span class="code-p">\`/api/stats\`</span> → 403 Forbidden
+- <span class="code-f">**FAIL**</span> GET <span class="code-p">\`/api/stats\`</span> → 403 Forbidden (45ms, 64 B, fetch)
+- <span class="code-w">**SLOW**</span> GET <span class="code-p">\`/api/analytics\`</span> → 200 (4200ms, 1.2 MB, fetch)
+- … and 37 more
 
 <span class="code-h">## Cookies</span>
 <span class="code-p">session_id</span>=<span class="code-w">***</span> | <span class="code-p">theme</span>=dark | <span class="code-p">_ga</span>=GA1.1.123456
@@ -595,8 +599,8 @@ localStorage: 4 keys · sessionStorage: 2 keys
 
 <span class="code-h">## Network</span> <span class="code-c">← toggled on</span>
 42 requests, 2 failed
-- <span class="code-f">**FAIL**</span> GET <span class="code-p">\`/api/users\`</span> → 500 Internal Server Error
-- <span class="code-f">**FAIL**</span> GET <span class="code-p">\`/api/stats\`</span> → 403 Forbidden
+- <span class="code-f">**FAIL**</span> GET <span class="code-p">\`/api/users\`</span> → 500 Internal Server Error (fetch, 220ms)
+- <span class="code-f">**FAIL**</span> GET <span class="code-p">\`/api/stats\`</span> → 403 Forbidden (fetch, 45ms)
 
 <span class="code-h">## Performance</span> <span class="code-c">← toggled on</span>
 - <span class="code-k">FP:</span> 320ms · <span class="code-k">FCP:</span> 450ms · <span class="code-k">LCP:</span> 1.8s

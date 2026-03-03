@@ -84,7 +84,7 @@ export interface NetworkRequest {
 }
 
 export interface NetworkData {
-  summary: { total: number; failed: number; slow: number }
+  summary: { total: number; failed: number; slow: number; opaque?: number }
   failed: NetworkRequest[]
   slow: NetworkRequest[]
   all?: NetworkRequest[]
