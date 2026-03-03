@@ -16,7 +16,7 @@ export const DEFAULT_SETTINGS: Settings = {
   preset: "light",
   customOptions: { ...DEFAULT_CUSTOM_OPTIONS },
   screenshotMode: "element",
-  clipboardMode: "both",
+  clipboardMode: "text",
   notifications: true,
   maxCaptures: 20,
   shortcut: "Ctrl+Shift+E",

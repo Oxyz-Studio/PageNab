@@ -23,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Screenshot saved to Downloads via `chrome.downloads` for persistence
 - Capture history stored in `chrome.storage.local` (max 20 captures)
 - History view with re-copy, detail view, and delete
-- Keyboard shortcut `Ctrl+Shift+N` / `Cmd+Shift+N` (customizable)
+- Keyboard shortcut `Ctrl+Shift+E` / `Cmd+Shift+E` (customizable)
 - Sensitive data sanitization (auth headers, cookie values, password inputs, tokens)
 - Popup UI with preset selection, capture controls, history, and settings
 - Privacy-first: all data stays local, no analytics, no tracking, no telemetry

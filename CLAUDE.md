@@ -206,7 +206,7 @@ performance           → { loadTime, LCP, CLS, FID, memory, ... } (Full/Custom 
 - Clipboard : multi-format text/plain + image/png (l'image s'attache directement au collage)
 - Screenshot : aussi sauvegarde via chrome.downloads pour persistance
 - UI : popup avec modes, presets, switches, history, settings
-- Raccourci clavier : `chrome.commands` (Ctrl+Shift+N / Cmd+Shift+N), modifiable via chrome://extensions/shortcuts
+- Raccourci clavier : `chrome.commands` (Ctrl+Shift+E / Cmd+Shift+E), modifiable via chrome://extensions/shortcuts
 - Historique : captures stockees dans chrome.storage.local, copy/details/delete
 - Tests : unitaires Vitest
 - Zero friction : installer = pret a capturer

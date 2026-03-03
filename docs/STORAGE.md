@@ -166,7 +166,7 @@ interface Settings {
   "screenshotMode": "fullpage",
   "notifications": true,
   "maxCaptures": 20,
-  "shortcut": "Ctrl+Shift+N"
+  "shortcut": "Ctrl+Shift+E"
 }
 ```
 

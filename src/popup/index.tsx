@@ -429,12 +429,35 @@ function IdleView({
       <AnimatePresence>
         {preset === "custom" && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.15, ease: "easeInOut" }}
+            initial="closed"
+            animate="open"
+            exit="closed"
+            variants={{
+              open: {
+                height: "auto",
+                transition: { duration: 0.22, ease: [0.4, 0, 0.2, 1] },
+              },
+              closed: {
+                height: 0,
+                transition: { duration: 0.18, ease: [0.4, 0, 0.2, 1], delay: 0.05 },
+              },
+            }}
             className="overflow-hidden"
           >
+            <motion.div
+              variants={{
+                open: {
+                  opacity: 1,
+                  y: 0,
+                  transition: { duration: 0.15, delay: 0.08, ease: "easeOut" },
+                },
+                closed: {
+                  opacity: 0,
+                  y: -6,
+                  transition: { duration: 0.1, ease: "easeIn" },
+                },
+              }}
+            >
             <div className="rounded-xl border border-[var(--border-primary)] bg-[var(--bg-secondary)] p-3">
               <div className="grid grid-cols-3 gap-x-3 gap-y-2.5">
                 {(
@@ -457,6 +480,7 @@ function IdleView({
                 ))}
               </div>
             </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

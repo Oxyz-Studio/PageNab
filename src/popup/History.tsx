@@ -4,7 +4,7 @@ import { ChevronRight, Clipboard, Image, Trash2 } from "lucide-react"
 
 import type { StoredCapture } from "../lib/types"
 import type { FormatInput } from "../lib/format"
-import { generateTextContent, extractFile, extractPath } from "../lib/format"
+import { generateTextContent, extractSourcePath, extractPath } from "../lib/format"
 import { truncate } from "../lib/sanitize"
 import { Header } from "./components/Header"
 
@@ -382,7 +382,7 @@ function CaptureDetails({ capture }: { capture: StoredCapture }) {
             <div className="space-y-1">
               {capture.console.logs.map((log, i) => {
                 const location = log.source || log.line
-                  ? ` — ${extractFile(log.source)}${log.line ? `:${log.line}` : ""}`
+                  ? ` — ${extractSourcePath(log.source)}${log.line ? `:${log.line}` : ""}`
                   : ""
                 return (
                   <div key={i}>

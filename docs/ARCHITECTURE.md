@@ -206,7 +206,7 @@ L'image s'attache directement quand on colle, comme un screenshot natif (Cmd+Shi
 ### Raccourci clavier
 
 Gere via `chrome.commands` (API native Manifest V3) :
-- Raccourci par defaut : `Ctrl+Shift+N` (Mac: `Cmd+Shift+N`)
+- Raccourci par defaut : `Ctrl+Shift+E` (Mac: `Cmd+Shift+E`)
 - Declare dans le manifest via `commands` dans package.json
 - Le background ecoute `chrome.commands.onCommand` et declenche la capture
 - L'utilisateur peut modifier le raccourci via `chrome://extensions/shortcuts`

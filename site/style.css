@@ -1116,7 +1116,7 @@ section { padding: var(--space-2xl) 0; }
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: transform 0.3s ease, background 0.2s, border-color 0.2s;
+  transition: transform 0.15s ease, background 0.15s, border-color 0.15s;
   color: var(--text-muted);
 }
 
@@ -1130,7 +1130,7 @@ section { padding: var(--space-2xl) 0; }
 .faq-answer {
   max-height: 0;
   overflow: hidden;
-  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  /* max-height animated by GSAP — no CSS transition needed */
 }
 
 .faq-answer p {

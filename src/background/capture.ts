@@ -91,6 +91,19 @@ export async function capturePage(
       }
     }
 
+    // Ensure network patcher is installed (captures method + body for fetch/XHR)
+    if (collectorOptions.network) {
+      try {
+        await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          func: ensureNetworkPatcher,
+          world: "MAIN" as chrome.scripting.ExecutionWorld,
+        })
+      } catch {
+        // Injection may fail on restricted pages — continue without network interception
+      }
+    }
+
     let collected: CollectorResult | null = null
     try {
       const injectionResults = await chrome.scripting.executeScript({
@@ -445,4 +458,83 @@ function ensureConsolePatcher(): void {
     })
   })
   ;(window as unknown as Record<string, unknown>).__pagenab_console_buffer = buffer
+}
+
+/**
+ * Fallback network patcher — injected via executeScript({world: "MAIN"}) before collector.
+ * Idempotent: no-op if __pagenab_network_buffer already exists.
+ * Patches fetch() and XMLHttpRequest to capture HTTP methods and request/response bodies.
+ * Self-contained with zero imports (serialized for executeScript({func})).
+ */
+function ensureNetworkPatcher(): void {
+  const win = window as unknown as Record<string, unknown>
+  if (win.__pagenab_network_buffer) return
+
+  const MAX = 200
+  const MAX_BODY = 500
+  type Entry = {
+    url: string; method: string; status: number; statusText: string
+    duration: number; requestBodyPreview?: string; responseBodyPreview?: string
+    responseContentType?: string; timestamp: string
+  }
+  const buffer: Entry[] = []
+  function push(e: Entry) { if (buffer.length >= MAX) buffer.shift(); buffer.push(e) }
+  function preview(body: unknown): string | undefined {
+    if (body == null) return undefined
+    try {
+      const s = typeof body === "string" ? body : JSON.stringify(body)
+      return s.length <= MAX_BODY ? s : s.slice(0, MAX_BODY) + "..."
+    } catch { return undefined }
+  }
+
+  // Patch fetch
+  const origFetch = window.fetch
+  window.fetch = function (input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+    const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url
+    const method = (init?.method ?? (typeof input !== "string" && !(input instanceof URL) ? input.method : undefined) ?? "GET").toUpperCase()
+    const start = Date.now()
+    const reqBody = preview(init?.body)
+    return origFetch.apply(this, [input, init]).then(
+      (resp: Response) => {
+        const entry: Entry = { url, method, status: resp.status, statusText: resp.statusText, duration: Date.now() - start, requestBodyPreview: reqBody, timestamp: new Date(start).toISOString(), responseContentType: resp.headers.get("content-type") ?? undefined }
+        if (resp.status >= 400) { resp.clone().text().then((t) => { entry.responseBodyPreview = preview(t) }).catch(() => {}) }
+        push(entry)
+        return resp
+      },
+      (err: unknown) => {
+        push({ url, method, status: 0, statusText: "Network Error", duration: Date.now() - start, requestBodyPreview: reqBody, timestamp: new Date(start).toISOString() })
+        throw err
+      },
+    )
+  }
+
+  // Patch XMLHttpRequest
+  const origOpen = XMLHttpRequest.prototype.open
+  const origSend = XMLHttpRequest.prototype.send
+  XMLHttpRequest.prototype.open = function (method: string, url: string | URL, ...rest: unknown[]) {
+    const r = this as unknown as Record<string, unknown>
+    r.__pn_method = method.toUpperCase()
+    r.__pn_url = typeof url === "string" ? url : url.toString()
+    r.__pn_start = Date.now()
+    return origOpen.apply(this, [method, url, ...rest] as Parameters<typeof origOpen>)
+  }
+  XMLHttpRequest.prototype.send = function (body?: Document | XMLHttpRequestBodyInit | null) {
+    const xhr = this as XMLHttpRequest & Record<string, unknown>
+    const reqBody = preview(body)
+    xhr.addEventListener("loadend", function () {
+      const entry: Entry = {
+        url: (xhr.__pn_url as string) ?? "", method: (xhr.__pn_method as string) ?? "GET",
+        status: xhr.status, statusText: xhr.statusText,
+        duration: Date.now() - ((xhr.__pn_start as number) ?? Date.now()),
+        requestBodyPreview: reqBody,
+        responseContentType: xhr.getResponseHeader("content-type") ?? undefined,
+        timestamp: new Date((xhr.__pn_start as number) ?? Date.now()).toISOString(),
+      }
+      if (xhr.status >= 400) { entry.responseBodyPreview = preview(xhr.responseText) }
+      push(entry)
+    })
+    return origSend.apply(this, [body])
+  }
+
+  win.__pagenab_network_buffer = buffer
 }

@@ -22,7 +22,7 @@ AI coding assistants are powerful, but they can't see your browser. When you nee
 - **Area selection** — Draw a rectangle to capture a specific region
 - **Element selection** — Click any element to capture it with its metadata
 - **Console logs** — Errors, warnings, and all log levels with stack traces
-- **Network requests** — Failed (4xx/5xx) and slow requests with details
+- **Network requests** — Failed (4xx/5xx) and slow requests with HTTP methods and details
 - **DOM snapshot** — Clean HTML with inline scripts removed
 - **Cookies & storage** — localStorage, sessionStorage, cookies (sanitized)
 - **User interactions** — Recent clicks, scrolls, and input events
@@ -30,7 +30,7 @@ AI coding assistants are powerful, but they can't see your browser. When you nee
 - **Page metadata** — URL, title, viewport, user agent, timestamp
 - **Three presets** — Light (minimal), Full (everything), Custom (your choice)
 - **Capture history** — Browse, re-copy, view details, or delete past captures
-- **Keyboard shortcut** — `Ctrl+Shift+N` / `Cmd+Shift+N` (customizable)
+- **Keyboard shortcut** — `Ctrl+Shift+E` / `Cmd+Shift+E` (customizable)
 - **Sensitive data sanitized** — Passwords, tokens, auth headers automatically stripped
 - **Zero configuration** — Install and start capturing
 
@@ -38,7 +38,7 @@ AI coding assistants are powerful, but they can't see your browser. When you nee
 
 ```
 1. Browse any web page
-2. Click the PageNab icon (or Ctrl+Shift+N)
+2. Click the PageNab icon (or Ctrl+Shift+E)
 3. Choose a preset: Light, Full, or Custom
 4. PageNab captures the page → saves screenshot to Downloads → copies to clipboard
 5. Paste into Claude Code, Cursor, or any AI assistant
@@ -52,24 +52,37 @@ PageNab copies **two formats simultaneously**:
 - **`image/png`** — The screenshot (full page or area)
 - **`text/plain`** — Structured text data:
 
-```
-=== PageNab Capture ===
-URL: https://app.example.com/dashboard
-Title: Dashboard — MyApp
-Captured: 2026-03-01T14:23:45.000Z
-Viewport: 1920x1080 | UA: Chrome/134
+```markdown
+# Web page capture
 
---- Console (3 errors, 1 warning) ---
-[ERROR] TypeError: Cannot read property 'map' of undefined — Dashboard.tsx:47
-[ERROR] GET /api/users 500 (Internal Server Error)
-[WARNING] Deprecated API usage detected
+**URL:** https://app.example.com/dashboard
+**Title:** Dashboard — MyApp
+**Time:** 2026-03-01 14:23:45
+**Viewport:** 1920x1080
+**Language:** en-US
+**Browser:** Chrome 134 (macOS)
+**Capture mode:** fullpage | Preset: light
+**Includes:** screenshot, console (errors only), network (failed only)
+**Excludes:** dom, cookies, storage, performance, interactions
 
---- Network (2 failed) ---
-[FAIL] GET /api/users → 500
-[FAIL] GET /api/stats → 403
+## Console
 
---- Screenshots ---
-Full page: PageNab_app.example.com_2026-03-01.png (saved to Downloads)
+2 errors, 1 warning
+- **ERROR** (14:23:42) TypeError: Cannot read property 'map' of undefined — `Dashboard.tsx:47`
+- **ERROR** (14:23:43) GET /api/users 500 (Internal Server Error)
+
+## Network
+
+42 requests, 2 failed
+- **FAIL** GET `/api/users` → 500 Internal Server Error (fetch, 220ms)
+- **FAIL** GET `/api/stats` → 403 Forbidden (fetch, 45ms)
+
+## Screenshots
+
+`~/Downloads/PageNab_app.example.com_2026-03-01.png`
+
+---
+Captured by PageNab v1.0.0
 ```
 
 When you paste, the AI gets both the image and the text — full context in one action.
@@ -99,27 +112,34 @@ The default preset. Captures what matters most for quick debugging — errors an
 **Time:** 2026-03-01 14:23:45
 **Viewport:** 1920x1080
 **Language:** en-US
+**Browser:** Chrome 134 (macOS)
+**Color scheme:** light
+**Capture mode:** fullpage | Preset: light
+**Includes:** screenshot, console (errors only), network (failed only)
+**Excludes:** dom, cookies, storage, performance, interactions
 
 ## Console
 
-2 errors, 1 warning
+12 entries, 2 errors, 1 warning
 
 - **ERROR** (14:23:42) TypeError: Cannot read property 'map' of undefined — `Dashboard.tsx:47`
   at Dashboard.render (Dashboard.tsx:47:12)
   at renderWithHooks (react-dom.js:1234:18)
 - **ERROR** (14:23:43) GET /api/users 500 (Internal Server Error) — `users.ts:12`
-- **WARN** (14:23:40) Deprecated API usage: chrome.runtime.sendMessage without callback
 
 ## Network
 
 42 requests, 2 failed
 
-- **FAIL** (14:23:43) `/api/users` → 500 Internal Server Error (fetch)
-- **FAIL** (14:23:44) `/api/stats` → 403 Forbidden (fetch)
+- **FAIL** GET `/api/users` → 500 Internal Server Error (fetch, 220ms)
+- **FAIL** GET `/api/stats` → 403 Forbidden (fetch, 45ms)
 
 ## Screenshots
 
 `~/Downloads/PageNab_app.example.com_2026-03-01.png`
+
+---
+Captured by PageNab v1.0.0
 ```
 
 </details>
@@ -141,10 +161,14 @@ Everything captured. For complex bugs where you need maximum context.
 **Time:** 2026-03-01 14:23:45
 **Viewport:** 1920x1080
 **Language:** en-US
+**Browser:** Chrome 134 (macOS)
+**Color scheme:** light
+**Capture mode:** fullpage | Preset: full
+**Includes:** screenshot, console, network, dom, cookies, storage, performance, interactions
 
 ## Console
 
-2 errors, 1 warning, 5 logs, 2 info
+2 errors, 1 warning, 5 logs, 2 info, 1 debug
 
 - **ERROR** (14:23:42) TypeError: Cannot read property 'map' of undefined — `Dashboard.tsx:47`
   at Dashboard.render (Dashboard.tsx:47:12)
@@ -158,28 +182,25 @@ Everything captured. For complex bugs where you need maximum context.
 - **LOG** (14:23:43) [Store] State updated: { loading: false, error: "500" }
 - **INFO** (14:23:38) App initialized in 342ms
 - **INFO** (14:23:39) Service worker registered
+- **DEBUG** (14:23:38) [Cache] Hit ratio: 0.82
 
 ## Network
 
 42 requests, 2 failed, 1 slow
 
-- (14:23:38) `/` → 200 (180ms, 14.2 KB, document)
-- (14:23:38) `/static/js/main.abc123.js` → 200 (95ms, 245.0 KB, script)
-- (14:23:38) `/static/css/app.def456.css` → 200 (42ms, 18.3 KB, stylesheet)
-- **FAIL** (14:23:43) `/api/users` → 500 (220ms, 128 B, fetch)
-- **FAIL** (14:23:44) `/api/stats` → 403 (45ms, 64 B, fetch)
-- **SLOW** (14:23:39) `/api/analytics` → 200 (4200ms, 1.2 MB, fetch)
-- (14:23:39) `/api/config` → 200 (85ms, 2.1 KB, fetch)
+- GET `/` → 200 (180ms, 14.2 KB, document)
+- GET `/static/js/main.abc123.js` → 200 (95ms, 245.0 KB, script)
+- GET `/static/css/app.def456.css` → 200 (42ms, 18.3 KB, stylesheet)
+- **FAIL** GET `/api/users` → 500 (220ms, 128 B, fetch)
+  Response: {"error":"Internal Server Error"}
+- **FAIL** GET `/api/stats` → 403 (45ms, 64 B, fetch)
+- **SLOW** GET `/api/analytics` → 200 (4200ms, 1.2 MB, fetch)
+- GET `/api/config` → 200 (85ms, 2.1 KB, fetch)
 - ... and 35 more
 
 ## Cookies
 
-4 cookies
-
-- session_id: `a1b2***`
-- theme: `dark`
-- locale: `en-US`
-- _ga: `GA1.2***`
+session_id=a1b2*** | theme=dark | locale=en-US | _ga=GA1.2***
 
 ## Storage
 
@@ -192,13 +213,14 @@ Everything captured. For complex bugs where you need maximum context.
 
 ## Performance
 
+- FP: 320ms | FCP: 450ms | LCP: 1850ms
 - Load: 1240ms | DOMContentLoaded: 680ms
-- LCP: 1850ms | CLS: 0.04 | FID: 12ms
+- CLS: 0.04 | FID: 12ms
 - Memory: 45.2 MB / 4.0 GB
 
 ## Interactions
 
-3 events
+3 events (most recent first)
 
 - [click] button.btn-refresh "Refresh" (14:23:41)
 - [scroll] down 340px (14:23:38)
@@ -208,9 +230,17 @@ Everything captured. For complex bugs where you need maximum context.
 
 `~/Downloads/PageNab_app.example.com_2026-03-01.png`
 
-## DOM
+## DOM (47.2 KB)
 
-(cleaned HTML snapshot — inline scripts removed, styles preserved)
+```html
+<main class="dashboard">
+  <h1>Dashboard</h1>
+  <div class="error-panel">…</div>
+</main>
+```
+
+---
+Captured by PageNab v1.0.0
 ```
 
 </details>
@@ -232,6 +262,10 @@ You pick exactly what to capture. Here's an example with Console + Performance e
 **Time:** 2026-03-01 14:23:45
 **Viewport:** 1920x1080
 **Language:** en-US
+**Browser:** Chrome 134 (macOS)
+**Color scheme:** light
+**Capture mode:** fullpage | Preset: custom
+**Includes:** screenshot, console, performance
 
 ## Console
 
@@ -245,13 +279,17 @@ You pick exactly what to capture. Here's an example with Console + Performance e
 
 ## Performance
 
+- FP: 320ms | FCP: 450ms | LCP: 1850ms
 - Load: 1240ms | DOMContentLoaded: 680ms
-- LCP: 1850ms | CLS: 0.04 | FID: 12ms
+- CLS: 0.04 | FID: 12ms
 - Memory: 45.2 MB / 4.0 GB
 
 ## Screenshots
 
 `~/Downloads/PageNab_app.example.com_2026-03-01.png`
+
+---
+Captured by PageNab v1.0.0
 ```
 
 </details>
@@ -315,7 +353,7 @@ Contributions are welcome! See [CONTRIBUTING.md](docs/CONTRIBUTING.md) for guide
 - [x] Multi-format clipboard (text + image)
 - [x] Screenshot saved to Downloads
 - [x] Capture history with re-copy/details/delete
-- [x] Keyboard shortcut (Ctrl+Shift+N / Cmd+Shift+N)
+- [x] Keyboard shortcut (Ctrl+Shift+E / Cmd+Shift+E)
 
 ### V2 (planned)
 - [ ] MCP server for Claude Code / Cursor

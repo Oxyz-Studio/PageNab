@@ -322,7 +322,7 @@
           openItem.classList.remove('open');
           gsap.to(openItem.querySelector('.faq-answer'), {
             maxHeight: 0,
-            duration: 0.3,
+            duration: 0.15,
             ease: 'power2.in',
           });
         }
@@ -332,14 +332,14 @@
         item.classList.remove('open');
         gsap.to(answer, {
           maxHeight: 0,
-          duration: 0.35,
+          duration: 0.15,
           ease: 'power2.in',
         });
       } else {
         item.classList.add('open');
         gsap.to(answer, {
           maxHeight: answer.scrollHeight + 40,
-          duration: 0.5,
+          duration: 0.2,
           ease: 'power3.out',
         });
       }
@@ -507,6 +507,8 @@
 <span class="code-k">**Title:**</span> Dashboard — MyApp
 <span class="code-k">**Time:**</span> 2026-03-01 14:23:45
 <span class="code-k">**Viewport:**</span> 1920×1080
+<span class="code-k">**Browser:**</span> Chrome 134 (macOS)
+<span class="code-k">**Includes:**</span> screenshot, console (errors only), network (failed only)
 
 <span class="code-h">## Console</span>
 2 errors, 1 warning
@@ -515,12 +517,13 @@
 
 <span class="code-h">## Network</span>
 42 requests, 2 failed
-- <span class="code-f">**FAIL**</span> <span class="code-p">\`/api/users\`</span> → 500 Internal Server Error
-- <span class="code-f">**FAIL**</span> <span class="code-p">\`/api/stats\`</span> → 403 Forbidden
+- <span class="code-f">**FAIL**</span> GET <span class="code-p">\`/api/users\`</span> → 500 Internal Server Error
+- <span class="code-f">**FAIL**</span> GET <span class="code-p">\`/api/stats\`</span> → 403 Forbidden
 
 <span class="code-h">## Screenshot</span>
 <span class="code-p">\`~/Downloads/PageNab_dashboard_….png\`</span>
-<span class="code-g">✓ Copied to clipboard</span>`;
+
+<span class="code-g">Captured by PageNab v1.0.0</span>`;
 
     const presetFullEx = `<span class="code-h"># Web page capture</span>
 
@@ -528,23 +531,25 @@
 <span class="code-k">**Title:**</span> Dashboard — MyApp
 <span class="code-k">**Time:**</span> 2026-03-01 14:23:45
 <span class="code-k">**Viewport:**</span> 1920×1080
+<span class="code-k">**Browser:**</span> Chrome 134 (macOS)
+<span class="code-k">**Capture mode:**</span> fullpage | Preset: full
+<span class="code-k">**Includes:**</span> screenshot, console, network, dom, cookies, storage, perf, interactions
 
 <span class="code-h">## Console</span>
-2 errors, 1 warning
+2 errors, 1 warning, 1 debug
 - <span class="code-e">**ERROR**</span> TypeError: Cannot read property 'map' of undefined — Dashboard.tsx:47
 - <span class="code-e">**ERROR**</span> GET /api/users 500 (Internal Server Error)
 - <span class="code-w">**WARN**</span> React: key prop missing — UserList.tsx:12
+- <span class="code-c">**DEBUG**</span> [Cache] Hit ratio: 0.82
 
 <span class="code-h">## Network</span>
 42 requests, 2 failed
-- <span class="code-f">**FAIL**</span> <span class="code-p">\`/api/users\`</span> → 500 Internal Server Error
-- <span class="code-f">**FAIL**</span> <span class="code-p">\`/api/stats\`</span> → 403 Forbidden
+- <span class="code-f">**FAIL**</span> GET <span class="code-p">\`/api/users\`</span> → 500 Internal Server Error
+  Response: {"error":"Internal Server Error"}
+- <span class="code-f">**FAIL**</span> GET <span class="code-p">\`/api/stats\`</span> → 403 Forbidden
 
 <span class="code-h">## Cookies</span>
-8 cookies (sensitive values masked)
-- <span class="code-p">\`_ga\`</span> = GA1.1.123456
-- <span class="code-p">\`session_id\`</span> = <span class="code-w">***</span>
-- <span class="code-p">\`auth_token\`</span> = <span class="code-w">***</span>
+<span class="code-p">session_id</span>=<span class="code-w">***</span> | <span class="code-p">theme</span>=dark | <span class="code-p">_ga</span>=GA1.1.123456
 
 <span class="code-h">## Storage</span>
 localStorage: 4 keys · sessionStorage: 2 keys
@@ -553,18 +558,17 @@ localStorage: 4 keys · sessionStorage: 2 keys
 - <span class="code-p">\`user_prefs\`</span> = {"lang":"en"}
 
 <span class="code-h">## Performance</span>
-- <span class="code-k">LCP:</span> 1.8s · <span class="code-k">CLS:</span> 0.04 · <span class="code-k">FID:</span> 12ms
+- <span class="code-k">FP:</span> 320ms · <span class="code-k">FCP:</span> 450ms · <span class="code-k">LCP:</span> 1.8s
 - <span class="code-k">Load:</span> 2.1s · <span class="code-k">DOMContentLoaded:</span> 0.9s
-- <span class="code-k">Memory:</span> 42MB used
+- <span class="code-k">CLS:</span> 0.04 · <span class="code-k">FID:</span> 12ms · <span class="code-k">Memory:</span> 42MB
 
 <span class="code-h">## Interactions</span>
-Last 5 events
+3 events (most recent first)
 - <span class="code-p">click</span> button.submit-btn (14:23:41)
 - <span class="code-p">input</span> input#search → <span class="code-w">***</span> (14:23:38)
 - <span class="code-p">scroll</span> window ↓340px (14:23:35)
 
-<span class="code-h">## DOM</span>
-<span class="code-c">&lt;!-- 2,847 chars, scripts removed --&gt;</span>
+<span class="code-h">## DOM</span> <span class="code-c">(47.2 KB)</span>
 <span class="code-p">&lt;main class="dashboard"&gt;</span>
   <span class="code-p">&lt;h1&gt;</span>Dashboard<span class="code-p">&lt;/h1&gt;</span>
   <span class="code-p">&lt;div class="error-panel"&gt;</span>…<span class="code-p">&lt;/div&gt;</span>
@@ -572,7 +576,8 @@ Last 5 events
 
 <span class="code-h">## Screenshot</span>
 <span class="code-p">\`~/Downloads/PageNab_dashboard_….png\`</span>
-<span class="code-g">✓ Copied to clipboard</span>`;
+
+<span class="code-g">Captured by PageNab v1.0.0</span>`;
 
     const presetCustomEx = `<span class="code-h"># Web page capture</span>
 
@@ -580,6 +585,8 @@ Last 5 events
 <span class="code-k">**Title:**</span> Dashboard — MyApp
 <span class="code-k">**Time:**</span> 2026-03-01 14:23:45
 <span class="code-k">**Viewport:**</span> 1920×1080
+<span class="code-k">**Browser:**</span> Chrome 134 (macOS)
+<span class="code-k">**Includes:**</span> screenshot, console, network, performance
 
 <span class="code-h">## Console</span> <span class="code-c">← toggled on</span>
 2 errors, 1 warning
@@ -588,18 +595,20 @@ Last 5 events
 
 <span class="code-h">## Network</span> <span class="code-c">← toggled on</span>
 42 requests, 2 failed
-- <span class="code-f">**FAIL**</span> <span class="code-p">\`/api/users\`</span> → 500 Internal Server Error
-- <span class="code-f">**FAIL**</span> <span class="code-p">\`/api/stats\`</span> → 403 Forbidden
+- <span class="code-f">**FAIL**</span> GET <span class="code-p">\`/api/users\`</span> → 500 Internal Server Error
+- <span class="code-f">**FAIL**</span> GET <span class="code-p">\`/api/stats\`</span> → 403 Forbidden
 
 <span class="code-h">## Performance</span> <span class="code-c">← toggled on</span>
-- <span class="code-k">LCP:</span> 1.8s · <span class="code-k">CLS:</span> 0.04 · <span class="code-k">FID:</span> 12ms
+- <span class="code-k">FP:</span> 320ms · <span class="code-k">FCP:</span> 450ms · <span class="code-k">LCP:</span> 1.8s
 - <span class="code-k">Load:</span> 2.1s · <span class="code-k">DOMContentLoaded:</span> 0.9s
+- <span class="code-k">CLS:</span> 0.04 · <span class="code-k">FID:</span> 12ms
 
 <span class="code-c">// DOM, Cookies, Storage, Interactions — toggled off</span>
 
 <span class="code-h">## Screenshot</span>
 <span class="code-p">\`~/Downloads/PageNab_dashboard_….png\`</span>
-<span class="code-g">✓ Copied to clipboard</span>`;
+
+<span class="code-g">Captured by PageNab v1.0.0</span>`;
 
     const presetExContents = { light: presetLightEx, full: presetFullEx, custom: presetCustomEx };
     const presetExLabels = {

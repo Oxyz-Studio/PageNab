@@ -36,6 +36,7 @@ export interface CollectorResult {
     summary: { total: number; failed: number; slow: number }
     failed: Array<{
       url: string
+      method?: string
       status: number
       statusText: string
       type: string
@@ -44,10 +45,13 @@ export interface CollectorResult {
       timestamp: string
       requestHeaders: Record<string, string>
       responseHeaders: Record<string, string>
+      requestBodyPreview?: string
+      responseBodyPreview?: string
       initiator?: string
     }>
     slow: Array<{
       url: string
+      method?: string
       status: number
       statusText: string
       type: string
@@ -56,10 +60,13 @@ export interface CollectorResult {
       timestamp: string
       requestHeaders: Record<string, string>
       responseHeaders: Record<string, string>
+      requestBodyPreview?: string
+      responseBodyPreview?: string
       initiator?: string
     }>
     all?: Array<{
       url: string
+      method?: string
       status: number
       statusText: string
       type: string
@@ -68,6 +75,8 @@ export interface CollectorResult {
       timestamp: string
       requestHeaders: Record<string, string>
       responseHeaders: Record<string, string>
+      requestBodyPreview?: string
+      responseBodyPreview?: string
       initiator?: string
     }>
   }
@@ -176,8 +185,33 @@ export function collectPageData(options: CollectorOptions): CollectorResult {
   if (options.network) {
     const entries = performance.getEntriesByType("resource") as PerformanceResourceTiming[]
 
+    // Read intercepted fetch/XHR buffer for method and body data
+    const networkBuffer = (
+      (window as unknown as Record<string, unknown>).__pagenab_network_buffer as
+        | Array<{
+            url: string
+            method: string
+            status: number
+            statusText: string
+            duration: number
+            requestContentType?: string
+            responseContentType?: string
+            requestBodyPreview?: string
+            responseBodyPreview?: string
+            timestamp: string
+          }>
+        | undefined
+    ) ?? []
+
+    // Index buffer by URL for merging
+    const bufferByUrl = new Map<string, typeof networkBuffer[number]>()
+    for (const b of networkBuffer) {
+      bufferByUrl.set(b.url, b)
+    }
+
     interface NetEntry {
       url: string
+      method?: string
       status: number
       statusText: string
       type: string
@@ -186,6 +220,8 @@ export function collectPageData(options: CollectorOptions): CollectorResult {
       timestamp: string
       requestHeaders: Record<string, string>
       responseHeaders: Record<string, string>
+      requestBodyPreview?: string
+      responseBodyPreview?: string
       initiator?: string
     }
 
@@ -219,16 +255,22 @@ export function collectPageData(options: CollectorOptions): CollectorResult {
       const isFailed = status >= 400
       const isSlow = !isFailed && duration > 3000 && status > 0
 
+      // Merge data from intercepted buffer (method, body previews)
+      const bufferEntry = bufferByUrl.get(entry.name)
+
       const netEntry: NetEntry = {
         url: entry.name,
+        method: bufferEntry?.method,
         status,
-        statusText: `HTTP ${status}`,
+        statusText: bufferEntry?.statusText ?? `HTTP ${status}`,
         type: entry.initiatorType,
         duration,
         size,
         timestamp: ts,
         requestHeaders: {},
         responseHeaders: {},
+        requestBodyPreview: bufferEntry?.requestBodyPreview,
+        responseBodyPreview: bufferEntry?.responseBodyPreview,
         initiator: entry.initiatorType,
       }
 
