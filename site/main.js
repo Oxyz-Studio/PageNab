@@ -436,7 +436,8 @@
         }, 1.82);
       }
 
-      // Phase 4 — screenshot flash
+      // Phase 4 — screenshot flash + background beam sync
+      tl.call(() => { if (window.PageNabBg) window.PageNabBg.flash(); }, null, 1.75);
       tl.to(flashPanel, { opacity: 0.92, duration: 0.1, ease: 'power3.in'  }, 1.75);
       tl.to(flashPanel, { opacity: 0,    duration: 0.65, ease: 'power2.out' }, 1.88);
 

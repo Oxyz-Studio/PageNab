@@ -213,6 +213,39 @@ section { padding: var(--space-2xl) 0; }
   .nav-links li:not(:last-child) { display: none; }
 }
 
+/* ── 6b. DATA FLOW CANVAS ─────────────────────────────────── */
+#bg-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  /*
+   * z-index: 0 would paint ABOVE non-positioned block elements (step 3
+   * in the CSS stacking order). Sections and footer therefore get
+   * position: relative + z-index: 1 below so they always render on top.
+   */
+  z-index: 0;
+  pointer-events: none;
+  will-change: transform; /* compositor layer hint */
+}
+
+/* Sections + key wrappers must be above the canvas ─────────── */
+section,
+footer,
+.works-with-strip,
+.section-faq,
+.section-cta {
+  position: relative;
+  z-index: 1;
+  /* Isolate so child z-index values don't leak into page stacking */
+  isolation: isolate;
+}
+
+/* Hide on mobile — too small for the effect to be meaningful */
+@media (max-width: 767px) {
+  #bg-canvas { display: none; }
+}
+
 /* ── 7. CURSOR ORB ────────────────────────────────────────── */
 .cursor-orb {
   position: fixed;

@@ -108,6 +108,9 @@
 </head>
 <body>
 
+  <!-- Data Flow Network background canvas -->
+  <canvas id="bg-canvas" aria-hidden="true"></canvas>
+
   <!-- Noise overlay -->
   <div class="noise-overlay" aria-hidden="true"></div>
 
@@ -663,9 +666,15 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
 
-  <!-- Site animations (after GSAP loads) -->
+  <!-- Site animations + background (after GSAP loads) -->
   <script>
     window.addEventListener('load', () => {
+      // Load background canvas first (no ScrollTrigger dependency at init time)
+      const bgScript = document.createElement('script');
+      bgScript.src = 'bg.js';
+      document.body.appendChild(bgScript);
+
+      // Load main animations (registers ScrollTrigger, then bg.js hooks into it)
       const script = document.createElement('script');
       script.src = 'main.js';
       document.body.appendChild(script);
