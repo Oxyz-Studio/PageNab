@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PageNab — Screenshot With Context for AI Assistants</title>
+  <meta name="description" content="Chrome extension that takes a screenshot with full context — console, network, DOM, cookies, storage — and copies it to your clipboard for any AI assistant.">
+  <meta name="keywords" content="Chrome extension, AI assistant, web page capture, debugging, screenshot, console logs, clipboard, developer tools">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="PageNab — Screenshot With Context for AI Assistants">
+  <meta property="og:description" content="One click. Screenshot + console + network + DOM — copied to your clipboard, ready to paste into any AI assistant.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://oxyz-studio.github.io/PageNab/">
+  <meta property="og:image" content="https://oxyz-studio.github.io/PageNab/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="PageNab — Screenshot With Context for AI Assistants">
+  <meta name="twitter:description" content="One click. Screenshot + console + network + DOM — copied to your clipboard for any AI assistant.">
+  <meta name="twitter:image" content="https://oxyz-studio.github.io/PageNab/og-image.png">
+
+  <link rel="canonical" href="https://oxyz-studio.github.io/PageNab/">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      color: #1a1a2e;
+      background: #fff;
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: #6366f1; text-decoration: none; }
+    a:hover { color: #4f46e5; text-decoration: underline; }
+    .container { max-width: 800px; margin: 0 auto; padding: 0 1.5rem; }
+
+    /* Nav */
+    nav { border-bottom: 1px solid #eee; padding: 1rem 0; }
+    .nav-inner { max-width: 800px; margin: 0 auto; padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; }
+    .nav-logo-img { height: 28px; }
+    .nav-links { list-style: none; display: flex; flex-wrap: wrap; gap: 1.25rem; align-items: center; }
+    .nav-cta { background: #6366f1; color: #fff; padding: 0.4rem 1rem; border-radius: 6px; font-weight: 500; }
+    .nav-cta:hover { background: #4f46e5; color: #fff; text-decoration: none; }
+
+    /* Sections */
+    section, .works-with { padding: 3rem 0; }
+    .bg-alt { background: #f8f8fc; }
+    h1 { font-size: 2.5rem; font-weight: 700; line-height: 1.15; margin-bottom: 1rem; }
+    h2 { font-size: 1.75rem; font-weight: 600; line-height: 1.25; margin-bottom: 1.5rem; }
+    h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.25rem; }
+    p { margin-bottom: 0.75rem; color: #444; }
+    .eyebrow { font-size: 0.85rem; font-weight: 500; color: #6366f1; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+
+    /* Hero */
+    .hero { padding: 4rem 0 3rem; }
+    .hero-subtitle { font-size: 1.15rem; color: #555; max-width: 550px; }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin: 1.5rem 0; }
+    .btn-primary { display: inline-block; background: #6366f1; color: #fff; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; }
+    .btn-primary:hover { background: #4f46e5; text-decoration: none; color: #fff; }
+    .btn-ghost { display: inline-block; border: 1px solid #ddd; padding: 0.75rem 1.5rem; border-radius: 8px; color: #333; font-weight: 500; }
+    .btn-ghost:hover { border-color: #6366f1; color: #6366f1; text-decoration: none; }
+    .trust-list { list-style: none; display: flex; flex-wrap: wrap; gap: 1.25rem; font-size: 0.9rem; color: #666; }
+
+    /* AI list */
+    .ai-list { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+    .ai-list span { background: #f0f0ff; color: #6366f1; padding: 0.3rem 0.75rem; border-radius: 20px; font-size: 0.85rem; font-weight: 500; }
+
+    /* How it works */
+    .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem; margin-top: 1.5rem; }
+    .step h3 { margin-bottom: 0.25rem; }
+    .step p { font-size: 0.95rem; }
+    kbd { background: #f0f0f5; border: 1px solid #ddd; border-radius: 4px; padding: 0.1rem 0.4rem; font-size: 0.85em; font-family: inherit; }
+
+    /* Features grid */
+    .features-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-top: 1.5rem; }
+    .feature h3 { margin-bottom: 0.15rem; }
+    .feature p { font-size: 0.9rem; margin-bottom: 0; }
+    @media (max-width: 600px) { .features-grid { grid-template-columns: 1fr; } }
+
+    /* Privacy stats */
+    .privacy-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .stat { text-align: center; background: #f8f8fc; border-radius: 10px; padding: 1.25rem 1rem; }
+    .stat-number { display: block; font-size: 1.5rem; font-weight: 700; color: #6366f1; }
+    .stat-label { font-size: 0.85rem; color: #666; }
+
+    /* Presets */
+    .presets-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .preset { border: 1px solid #e5e5f0; border-radius: 10px; padding: 1.25rem; }
+    .preset h3 { margin-bottom: 0.25rem; }
+    .preset .badge { font-size: 0.75rem; background: #f0f0ff; color: #6366f1; padding: 0.15rem 0.5rem; border-radius: 10px; margin-left: 0.5rem; font-weight: 500; }
+    .preset .tokens { display: block; font-size: 0.8rem; color: #999; margin-top: 0.5rem; }
+    .example-output { background: #1e1e2e; color: #cdd6f4; border-radius: 10px; padding: 1.25rem; font-family: 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'Menlo', monospace; font-size: 0.82rem; line-height: 1.6; overflow-x: auto; white-space: pre; }
+
+    /* FAQ */
+    .faq-item { border-bottom: 1px solid #eee; padding: 1.25rem 0; }
+    .faq-item h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; }
+    .faq-item p { margin-bottom: 0; font-size: 0.95rem; }
+    .faq-num { color: #6366f1; margin-right: 0.5rem; }
+
+    /* CTA */
+    .cta { text-align: center; padding: 3rem 0; }
+    .cta h2 { font-size: 2rem; }
+
+    /* Footer */
+    footer { border-top: 1px solid #eee; padding: 1.5rem 0; font-size: 0.85rem; color: #888; }
+    .footer-inner { max-width: 800px; margin: 0 auto; padding: 0 1.5rem; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; }
+    .footer-links { list-style: none; display: flex; flex-wrap: wrap; gap: 1rem; }
+    .footer-links a { color: #888; }
+    .footer-links a:hover { color: #6366f1; }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav>
+    <div class="nav-inner">
+      <a href="#">
+        <img src="logo.png" alt="PageNab" class="nav-logo-img">
+      </a>
+      <ul class="nav-links">
+        <li><a href="#how-it-works">How It Works</a></li>
+        <li><a href="#features">Features</a></li>
+        <li><a href="#presets">Presets</a></li>
+        <li><a href="#privacy">Privacy</a></li>
+        <li><a href="#faq">FAQ</a></li>
+        <li><a href="https://github.com/Oxyz-Studio/PageNab" target="_blank" rel="noopener">GitHub</a></li>
+        <li><a href="#" class="nav-cta">Add to Chrome</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container">
+      <p class="eyebrow">Open Source Chrome Extension</p>
+      <h1>One click.<br>Full context.</h1>
+      <p class="hero-subtitle">
+        Screenshot + dev tools context, copied to your clipboard. Paste into <strong>any AI assistant</strong> — real answers, not guesses.
+      </p>
+      <div class="hero-actions">
+        <a href="#" class="btn-primary">Add to Chrome — It's Free</a>
+        <a href="https://github.com/Oxyz-Studio/PageNab" target="_blank" rel="noopener" class="btn-ghost">View on GitHub</a>
+      </div>
+      <ul class="trust-list">
+        <li>MIT License</li>
+        <li>No tracking</li>
+        <li>No servers</li>
+        <li>100% local</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- Works with every AI -->
+  <section class="works-with">
+    <div class="container">
+      <p><strong>Works with every AI</strong></p>
+      <div class="ai-list">
+        <span>Claude</span>
+        <span>ChatGPT</span>
+        <span>Gemini</span>
+        <span>Cursor</span>
+        <span>GitHub Copilot</span>
+        <span>Perplexity</span>
+        <span>Grok</span>
+        <span>Windsurf</span>
+        <span>Mistral</span>
+        <span>DeepSeek</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works -->
+  <section id="how-it-works">
+    <div class="container">
+      <p class="eyebrow">How It Works</p>
+      <h2>Three steps. Full context.</h2>
+      <div class="steps">
+        <div class="step">
+          <h3>1. Capture</h3>
+          <p>Click the icon or press <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>E</kbd></p>
+        </div>
+        <div class="step">
+          <h3>2. Clipboard</h3>
+          <p>Screenshot + structured text copied instantly</p>
+        </div>
+        <div class="step">
+          <h3>3. Paste</h3>
+          <p>Screenshot + context in any AI assistant</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- What Gets Captured -->
+  <section class="bg-alt" id="features">
+    <div class="container">
+      <p class="eyebrow">What Gets Captured</p>
+      <h2>Everything your AI needs to understand.</h2>
+      <div class="features-grid">
+        <div class="feature">
+          <h3>Screenshots</h3>
+          <p>Full page, area selection, or element capture. Saved to Downloads and pasted as image.</p>
+        </div>
+        <div class="feature">
+          <h3>Console Logs</h3>
+          <p>Errors, warnings, all levels with stack traces.</p>
+        </div>
+        <div class="feature">
+          <h3>Network</h3>
+          <p>Failed and slow requests, auto-stripped auth headers.</p>
+        </div>
+        <div class="feature">
+          <h3>DOM Snapshot</h3>
+          <p>Clean HTML, inline scripts removed, passwords masked.</p>
+        </div>
+        <div class="feature">
+          <h3>Storage &amp; Cookies</h3>
+          <p>localStorage, sessionStorage, cookies. Sensitive values masked.</p>
+        </div>
+        <div class="feature">
+          <h3>Performance</h3>
+          <p>Core Web Vitals, load times, memory usage.</p>
+        </div>
+        <div class="feature">
+          <h3>Interactions</h3>
+          <p>Recent clicks, inputs, scrolls. Values masked.</p>
+        </div>
+        <div class="feature">
+          <h3>Metadata</h3>
+          <p>URL, title, viewport, timestamp. Always included.</p>
+        </div>
+      </div>
+      <p style="margin-top:1.5rem">Works with <strong>every AI assistant</strong> — paste and go.</p>
+    </div>
+  </section>
+
+  <!-- Privacy -->
+  <section id="privacy">
+    <div class="container">
+      <p class="eyebrow">Privacy</p>
+      <h2>Zero data. Full trust.</h2>
+      <div class="privacy-stats">
+        <div class="stat">
+          <span class="stat-number">0 servers</span>
+          <span class="stat-label">Nothing is ever sent anywhere</span>
+        </div>
+        <div class="stat">
+          <span class="stat-number">100% local</span>
+          <span class="stat-label">All data stays on your machine</span>
+        </div>
+        <div class="stat">
+          <span class="stat-number">0 trackers</span>
+          <span class="stat-label">No analytics, telemetry, or logging</span>
+        </div>
+        <div class="stat">
+          <span class="stat-number">MIT</span>
+          <span class="stat-label">Open source — audit every line</span>
+        </div>
+      </div>
+      <p>All captured data goes to your clipboard and Downloads folder. Sensitive values (tokens, passwords, auth headers) are automatically masked. No servers, no accounts, no tracking — ever.</p>
+      <p><a href="privacy-policy.html" class="btn-ghost" style="display:inline-block;margin-top:0.75rem">Read the full Privacy Policy</a></p>
+    </div>
+  </section>
+
+  <!-- Presets -->
+  <section class="bg-alt" id="presets">
+    <div class="container">
+      <p class="eyebrow">Presets</p>
+      <h2>Choose your level of detail.</h2>
+      <div class="presets-list">
+        <div class="preset">
+          <h3>Light <span class="badge">Default</span></h3>
+          <p>Screenshot + console errors + failed requests.</p>
+          <span class="tokens">~200–500 tokens</span>
+        </div>
+        <div class="preset">
+          <h3>Full <span class="badge">Everything</span></h3>
+          <p>Console, network, DOM, cookies, storage, perf.</p>
+          <span class="tokens">~1.5K–150K tokens</span>
+        </div>
+        <div class="preset">
+          <h3>Custom <span class="badge">Your pick</span></h3>
+          <p>Choose exactly which data types to include.</p>
+          <span class="tokens">You decide</span>
+        </div>
+      </div>
+      <div class="example-output"># Web page capture
+
+**URL:** https://app.example.com/dashboard
+**Title:** Dashboard — MyApp
+**Time:** 2026-03-01 14:23:45
+**Viewport:** 1920×1080
+**Browser:** Chrome 134 (macOS)
+**Includes:** screenshot, console (errors only), network (failed only)
+
+## Console
+2 errors, 1 warning
+- **ERROR** TypeError: Cannot read property 'map' of undefined — Dashboard.tsx:47
+- **ERROR** GET /api/users 500 (Internal Server Error)
+
+## Network
+42 requests, 2 failed
+- **FAIL** GET `/api/users` → 500 Internal Server Error
+- **FAIL** GET `/api/stats` → 403 Forbidden
+
+## Screenshot
+`~/Downloads/PageNab_dashboard_….png`
+
+Captured by PageNab v1.0.0</div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq">
+    <div class="container">
+      <p class="eyebrow" style="text-align:center">FAQ</p>
+      <h2 style="text-align:center">Frequently asked.</h2>
+
+      <div class="faq-item">
+        <h3><span class="faq-num">01</span> How do I capture console errors and network requests to share with an AI assistant?</h3>
+        <p>Click the PageNab icon or press the keyboard shortcut. It captures a screenshot, console logs (errors, warnings, stack traces), failed and slow network requests, and page metadata — all in one click. Everything is copied to your clipboard as structured text + image. Just paste into any AI assistant. No need to open DevTools, no MCP server, no setup.</p>
+      </div>
+
+      <div class="faq-item">
+        <h3><span class="faq-num">02</span> How is PageNab different from Chrome DevTools MCP?</h3>
+        <p>Chrome DevTools MCP requires a running MCP server, JSON configuration, and an AI tool that supports the MCP protocol. PageNab is a standard Chrome extension: install it, click, paste. It works with any AI that accepts text and images from your clipboard — web apps, CLI tools, IDE extensions. Zero configuration, zero dependencies.</p>
+      </div>
+
+      <div class="faq-item">
+        <h3><span class="faq-num">03</span> Can I use PageNab to debug a web app with ChatGPT, Claude, or Cursor?</h3>
+        <p>Yes. Capture your page, then paste — your AI gets the screenshot plus structured context: console errors, failed network requests, page metadata, and more. It works with ChatGPT, Claude, Gemini, Cursor, GitHub Copilot, Windsurf, Perplexity, and any tool that accepts text and images from the clipboard.</p>
+      </div>
+
+      <div class="faq-item">
+        <h3><span class="faq-num">04</span> What sensitive data is stripped before capture?</h3>
+        <p>Authorization headers, API keys, and tokens are automatically removed from network requests. Password fields are replaced with ***. Cookies with sensitive names (token, session, auth, secret) are masked. User input values in interactions are always hidden. Everything stays on your machine — nothing is sent to any server.</p>
+      </div>
+
+      <div class="faq-item">
+        <h3><span class="faq-num">05</span> Can I capture a specific element or area instead of the full page?</h3>
+        <p>Yes. PageNab offers three capture modes: Full Page, Area (draw a rectangle to select a region), and Element (click to select a specific DOM element). The cropped screenshot and dev tools context are copied together. The full-page screenshot is also saved to your Downloads folder.</p>
+      </div>
+
+      <div class="faq-item">
+        <h3><span class="faq-num">06</span> Is PageNab free?</h3>
+        <p>Yes, 100% free and open source under the MIT license. No account required, no usage limits, no premium tier. The source code is on GitHub — you can audit every line.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta">
+    <div class="container">
+      <p class="eyebrow">Get Started Now</p>
+      <h2>Less debugging. More shipping.</h2>
+      <p><a href="#" class="btn-primary" style="font-size:1.1rem;padding:0.85rem 2rem">Add to Chrome — It's Free</a></p>
+      <p style="color:#888;font-size:0.9rem;margin-top:0.75rem">Open source · No account required · Works immediately</p>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-inner">
+      <span>PageNab by <a href="https://oxyz.fr" target="_blank" rel="noopener">Oxyz Studio</a></span>
+      <ul class="footer-links">
+        <li><a href="privacy-policy.html">Privacy Policy</a></li>
+        <li><a href="https://github.com/Oxyz-Studio/PageNab" target="_blank" rel="noopener">GitHub</a></li>
+        <li><a href="#">Chrome Web Store</a></li>
+        <li><a href="https://github.com/Oxyz-Studio/PageNab/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a></li>
+      </ul>
+      <span>© 2026 Oxyz Studio</span>
+    </div>
+  </footer>
+
+</body>
+</html>
