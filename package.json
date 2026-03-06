@@ -1,0 +1,69 @@
+{
+  "name": "pagenab",
+  "displayName": "PageNab",
+  "version": "1.0.0",
+  "description": "Capture complete web page context and paste it into any AI assistant",
+  "author": "Oxyz Studio",
+  "license": "MIT",
+  "homepage": "https://github.com/Oxyz-Studio/PageNab",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Oxyz-Studio/PageNab.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Oxyz-Studio/PageNab/issues"
+  },
+  "scripts": {
+    "dev": "plasmo dev",
+    "build": "plasmo build",
+    "zip": "plasmo package",
+    "lint": "eslint src/ && prettier --check src/",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@fontsource/inter": "^5.2.8",
+    "@headlessui/react": "^2.2.9",
+    "framer-motion": "^11.18.2",
+    "lucide-react": "^0.576.0",
+    "plasmo": "^0.90.5",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "@types/chrome": "^0.0.300",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "autoprefixer": "^10.4.0",
+    "eslint": "^9.0.0",
+    "jsdom": "^25.0.0",
+    "postcss": "^8.4.0",
+    "prettier": "^3.4.0",
+    "tailwindcss": "^3.4.0",
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.0.0",
+    "vitest": "^3.0.0"
+  },
+  "manifest": {
+    "permissions": [
+      "activeTab",
+      "clipboardWrite",
+      "storage",
+      "downloads",
+      "downloads.ui",
+      "notifications",
+      "scripting"
+    ],
+    "commands": {
+      "capture-page": {
+        "suggested_key": {
+          "default": "Ctrl+Shift+E",
+          "mac": "Command+Shift+E"
+        },
+        "description": "Capture the current page"
+      }
+    }
+  }
+}
