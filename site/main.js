@@ -524,7 +524,7 @@
 <span class="code-h">## Screenshot</span>
 <span class="code-p">\`~/Downloads/PageNab_dashboard_….png\`</span>
 
-<span class="code-g">Captured by PageNab v1.0.0</span>`;
+<span class="code-g">Captured by PageNab</span>`;
 
     const presetFullEx = `<span class="code-h"># Web page capture</span>
 
@@ -582,7 +582,7 @@ localStorage: 4 keys · sessionStorage: 2 keys
 <span class="code-h">## Screenshot</span>
 <span class="code-p">\`~/Downloads/PageNab_dashboard_….png\`</span>
 
-<span class="code-g">Captured by PageNab v1.0.0</span>`;
+<span class="code-g">Captured by PageNab</span>`;
 
     const presetCustomEx = `<span class="code-h"># Web page capture</span>
 
@@ -613,7 +613,7 @@ localStorage: 4 keys · sessionStorage: 2 keys
 <span class="code-h">## Screenshot</span>
 <span class="code-p">\`~/Downloads/PageNab_dashboard_….png\`</span>
 
-<span class="code-g">Captured by PageNab v1.0.0</span>`;
+<span class="code-g">Captured by PageNab</span>`;
 
     const presetExContents = { light: presetLightEx, full: presetFullEx, custom: presetCustomEx };
     const presetExLabels = {
